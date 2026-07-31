@@ -1,0 +1,13 @@
+FROM node:22-alpine AS migration
+WORKDIR /app
+
+# copy the slim migration package.json into root
+COPY src/database/migrations/package.json ./package.json
+
+RUN npm install
+
+# copy only what migrations need
+COPY tsconfig.json .
+COPY src ./src
+
+CMD ["npm", "run", "migration:run"]

@@ -1,0 +1,35 @@
+- name: Ensure target directory exists
+  file:
+    path: /docker/services/app
+    state: directory
+    owner: ansible
+    group: ansible
+    mode: '0755'
+
+- name: Copy docker-compose.yml to the target host
+  copy:
+    src: docker-compose.yml
+    dest: /docker/services/app/docker-compose.yml
+    owner: ansible
+    group: ansible
+    mode: '0644'
+
+- name: Create environment-specific .env file
+  template:
+    src: .env.j2
+    dest: '/docker/services/app/.env.{{ env }}'
+    owner: ansible
+    group: ansible
+    mode: '0644'
+  no_log: true # hides secrets in logs
+
+- name: Start the docker-compose stack
+  community.docker.docker_compose_v2:
+    project_src: /docker/services/app
+    project_name: '{{ env }}'
+    files:
+      - docker-compose.yml
+    state: present
+    pull: always
+    env_files:
+      - '/docker/services/app/.env.{{ env }}'

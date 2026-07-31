@@ -1,0 +1,20 @@
+services:
+  database:
+    image: postgres
+    container_name: app-database-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - ./src/database/:/var/lib/postgresql/
+
+  redis:
+    image: redis
+    container_name: app-redis-dev
+    ports:
+      - ${REDIS_PORT}:6379
+    volumes:
+      - ./src/redis/data:/data

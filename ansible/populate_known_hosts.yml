@@ -1,0 +1,5 @@
+- name: Populate known hosts
+  hosts: all
+  gather_facts: no
+  roles:
+    - populate_known_hosts

@@ -1,0 +1,5 @@
+# Restricted sudo for Ansible automation user
+Cmnd_Alias DOCKER_CMDS = /usr/bin/docker, /usr/bin/docker-compose
+Cmnd_Alias FILE_CMDS   = /bin/mkdir, /bin/chown, /bin/cp, /bin/chmod
+
+ansible ALL=(ALL) NOPASSWD: ALL

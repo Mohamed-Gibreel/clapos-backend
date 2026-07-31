@@ -1,0 +1,9 @@
+- name: Print out selected servers
+  debug:
+    msg: "{{ ansible_play_hosts_all | difference(['localhost', '127.0.0.1']) }}"
+
+- name: Add selected servers to known_hosts
+  delegate_to: localhost
+  ansible.builtin.known_hosts:
+    name: '{{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}'
+    key: "{{ lookup('pipe', 'ssh-keyscan -H ' ~ (hostvars[inventory_hostname].ansible_host | default(inventory_hostname))) }}"

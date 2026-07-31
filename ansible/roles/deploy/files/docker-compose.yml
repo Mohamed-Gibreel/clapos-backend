@@ -1,0 +1,75 @@
+services:
+  app-migration:
+    image: ${REGISTRY}/${MIGRATION_IMAGE}
+    networks:
+      - app
+    environment:
+      - POSTGRES_HOST=app-database
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=5432
+    depends_on:
+      app-database:
+        condition: service_healthy
+
+  app-backend:
+    image: ${REGISTRY}/${APP_IMAGE}
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - POSTGRES_HOST=app-database
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=app-redis
+      - REDIS_PORT=6379
+      - MASTER_SECRET=${MASTER_SECRET}
+    networks:
+      - traefik
+      - app
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.${SERVICE_NAME}.tls=true'
+      - 'traefik.http.routers.${SERVICE_NAME}.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN}`)'
+      - 'traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=3000'
+      - 'traefik.docker.network=traefik_default'
+    depends_on:
+      app-migration:
+        condition: service_completed_successfully
+
+  app-database:
+    image: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - app
+    volumes:
+      - app-database-volume:/var/lib/postgresql/data
+
+  app-redis:
+    image: redis
+    networks:
+      - app
+    volumes:
+      - app-redis-volume:/data
+
+networks:
+  traefik:
+    name: traefik_default
+    external: true
+  app:
+    driver: bridge
+
+volumes:
+  app-redis-volume:
+  app-database-volume:

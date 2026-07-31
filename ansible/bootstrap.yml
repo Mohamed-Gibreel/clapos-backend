@@ -1,0 +1,11 @@
+- name: Create ansible user on server
+  hosts: all
+  become: true
+  remote_user: PLACEHOLDER_USER
+  vars:
+    pip_install_packages:
+      - name: docker
+  roles:
+    - bootstrap
+    - geerlingguy.pip
+    - geerlingguy.docker

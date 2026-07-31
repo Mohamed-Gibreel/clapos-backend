@@ -1,0 +1,17 @@
+all:
+  children:
+    dev:
+      hosts:
+        dev-server:
+          ansible_host: PLACEHOLDER_SSH_HOST
+          env: dev
+    uat:
+      hosts:
+        uat-server:
+          ansible_host: PLACEHOLDER_SSH_HOST
+          env: uat
+    prod:
+      hosts:
+        release-server:
+          ansible_host: PLACEHOLDER_SSH_HOST
+          env: prod
