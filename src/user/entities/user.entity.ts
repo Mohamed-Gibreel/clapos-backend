@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { Exclude, Expose } from 'class-transformer';
 
@@ -15,13 +16,12 @@ import { Tenant } from 'src/tenant/entities/tenant.entity';
 
 @Entity()
 @Expose()
+@Unique(['emailAddress', 'tenant']) // email must be unique per tenant, not globally
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    unique: true,
-  })
+  @Column()
   emailAddress: string;
 
   @Column()

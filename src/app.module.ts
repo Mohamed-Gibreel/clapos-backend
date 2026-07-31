@@ -15,6 +15,7 @@ import {
   RequestMethod,
   MiddlewareConsumer,
 } from '@nestjs/common';
+
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule, SharedBullAsyncConfiguration } from '@nestjs/bullmq';
@@ -37,7 +38,6 @@ import { RoleModule } from './role/role.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './seed/seed.module';
 import { TenantModule } from './tenant/tenant.module';
-import { ProjectModule } from './project/project.module';
 
 const typeormConfig: TypeOrmModuleAsyncOptions = {
   imports: [ConfigModule],
@@ -89,7 +89,6 @@ const bullmqConfig: SharedBullAsyncConfiguration = {
     RoleModule,
     SeedModule,
     TenantModule,
-    ProjectModule,
   ],
   controllers: [],
   providers: [
@@ -108,7 +107,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
-      .exclude({ path: 'auth/login', method: RequestMethod.ALL })
-      .forRoutes({ path: '*', method: RequestMethod.ALL }); // Apply to everything else
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

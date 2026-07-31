@@ -1,19 +1,12 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { forwardRef, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { Repository, FindOneOptions, FindManyOptions } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
-
 import { CreateUserDTO } from './dto/create-user.dto';
-
-import {
-  failResult,
-  successResult,
-  convertToInstance,
-} from '../utils/dto-validator';
-
+import { failResult, successResult, convertToInstance } from '../utils/dto-validator';
 import { createResultClass, ResultType } from '../utils/result';
-import { FindUserDTO } from './dto/find-user.dto';
 import { RoleService } from 'src/role/role.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { Roles } from 'src/utils/decorators/roles.decorator';
@@ -30,13 +23,10 @@ export class UserService {
     private tenantService: TenantService,
   ) {}
 
-  async create(
-    createUserDto: CreateUserDTO,
-  ): Promise<ResultType<User, string[]>> {
+  async create(createUserDto: CreateUserDTO): Promise<ResultType<User, string[]>> {
     const Result = createResultClass<User, string[]>();
     try {
       const isUserValid = convertToInstance(CreateUserDTO, createUserDto);
-
       if (!isUserValid.isSuccess) {
         return failResult(Result, isUserValid.error);
       }
@@ -44,6 +34,7 @@ export class UserService {
       const userAlreadyExists = await this.userRepository.findOne({
         where: {
           emailAddress: isUserValid.value.emailAddress,
+          tenant: { id: isUserValid.value.tenantId },
         },
       });
 
@@ -55,9 +46,7 @@ export class UserService {
       }
 
       const role = await this.roleService.findOne({
-        where: {
-          id: isUserValid.value.roleId,
-        },
+        where: { id: isUserValid.value.roleId },
       });
 
       if (!role.isSuccess) {
@@ -70,16 +59,14 @@ export class UserService {
       if (!this.allowedRoles.includes(role.value.name)) {
         return Result.error({
           error: [
-            `You can only create users with one of the following roles: ${this.allowedRoles.join(', ').toString()}`,
+            `You can only create users with one of the following roles: ${this.allowedRoles.join(', ')}`,
           ],
           errorCode: HttpStatus.BAD_REQUEST,
         });
       }
 
       const tenant = await this.tenantService.findOne({
-        where: {
-          id: isUserValid.value.tenantId,
-        },
+        where: { id: isUserValid.value.tenantId },
       });
 
       if (!tenant.isSuccess) {
@@ -90,61 +77,43 @@ export class UserService {
       }
 
       let user = this.userRepository.create();
-
       user.name = createUserDto.name;
-      user.password = createUserDto.password;
+      user.password = await bcrypt.hash(createUserDto.password, 10);
       user.emailAddress = createUserDto.emailAddress;
-
       user.role = role.value;
       user.tenant = tenant.value;
 
       user = await this.userRepository.save(user);
-
       return successResult(Result, user);
     } catch (e) {
       return failResult(Result, e.toString());
     }
   }
 
-  async getAll() {
+  async getAll(tenantId: string) {
     const Result = createResultClass<User[], string[]>();
     try {
-      var users = await this.find({});
+      const users = await this.find({
+        where: { tenant: { id: tenantId } },
+      });
       if (!users.isSuccess) {
-        return Result.error({
-          error: [users.error],
-          errorCode: users.errorCode,
-        });
+        return Result.error({ error: [users.error], errorCode: users.errorCode });
       }
       return Result.success(users.value);
     } catch (e) {
-      return Result.error({
-        error: e,
-        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      });
+      return Result.error({ error: e, errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
   async deleteUserById(id: number) {
     const Result = createResultClass<string, string>();
     try {
-      const user = await this.findOne({
-        where: {
-          id: id,
-        },
-      });
-
+      const user = await this.findOne({ where: { id: id } });
       if (!user.isSuccess) {
-        return Result.error({
-          error: user.error,
-          errorCode: user.errorCode,
-        });
+        return Result.error({ error: user.error, errorCode: user.errorCode });
       }
 
-      const deleteRes = await this.userRepository.delete({
-        id: id,
-      });
-
+      const deleteRes = await this.userRepository.delete({ id: id });
       if ((deleteRes.affected ?? 0) <= 0) {
         return Result.error({
           error: 'Unable to delete user',
@@ -154,62 +123,51 @@ export class UserService {
 
       return Result.success('Deleted user successfully');
     } catch (e) {
-      return Result.error({
-        error: e,
-        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      });
+      return Result.error({ error: e, errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
-  async findByUsernameAndPassword({
-    user: { password, name },
+  /**
+   * Find a user by name scoped to a specific tenant.
+   * Used during login — password comparison is done separately with bcrypt.
+   */
+  async findByName({
+    name,
+    tenantId,
   }: {
-    user: FindUserDTO;
+    name: string;
+    tenantId: string;
   }): Promise<ResultType<User, string>> {
     const Result = createResultClass<User, string>();
     try {
-      const userFound = await this.findOne({
-        where: {
-          name: name,
-          password: password,
-        },
+      const user = await this.userRepository.findOne({
+        where: { name, tenant: { id: tenantId } },
         relations: ['role', 'tenant'],
       });
-
-      if (!userFound.isSuccess) {
-        return failResult(Result, userFound.error);
-      }
-      return successResult(Result, userFound.value);
+      if (!user) return failResult(Result, 'User not found');
+      return successResult(Result, user);
     } catch (e) {
       return failResult(Result, e.toString());
     }
   }
 
-  async findOne(
-    conditions: FindOneOptions<User>,
-  ): Promise<ResultType<User, string>> {
+  async findOne(conditions: FindOneOptions<User>): Promise<ResultType<User, string>> {
     const Result = createResultClass<User, string>();
     try {
-      const userAlreadyExists = await this.userRepository.findOne(conditions);
-      if (!userAlreadyExists) {
-        return failResult(Result, 'User not found');
-      }
-      return successResult(Result, userAlreadyExists);
+      const user = await this.userRepository.findOne(conditions);
+      if (!user) return failResult(Result, 'User not found');
+      return successResult(Result, user);
     } catch (e) {
       return failResult(Result, e.toString());
     }
   }
 
-  async find(
-    conditions: FindManyOptions<User>,
-  ): Promise<ResultType<User[], string>> {
+  async find(conditions: FindManyOptions<User>): Promise<ResultType<User[], string>> {
     const Result = createResultClass<User[], string>();
     try {
-      const userAlreadyExists = await this.userRepository.find(conditions);
-      if (!userAlreadyExists) {
-        return failResult(Result, 'User not found');
-      }
-      return successResult(Result, userAlreadyExists);
+      const users = await this.userRepository.find(conditions);
+      if (!users) return failResult(Result, 'Users not found');
+      return successResult(Result, users);
     } catch (e) {
       return failResult(Result, e.toString());
     }
@@ -219,23 +177,15 @@ export class UserService {
     const Result = createResultClass<User, string[]>();
     try {
       const user = await this.userRepository.findOne({
-        where: {
-          id: id,
-        },
+        where: { id },
         relations: ['role', 'tenant'],
       });
 
-      if (!user)
-        return Result.error({
-          errorCode: HttpStatus.NOT_FOUND,
-          error: ['Unable to find user'],
-        });
+      if (!user) {
+        return Result.error({ errorCode: HttpStatus.NOT_FOUND, error: ['Unable to find user'] });
+      }
 
-      const updateRes = await this.userRepository.update(
-        { id: id },
-        { last_login_at: new Date() },
-      );
-
+      const updateRes = await this.userRepository.update({ id }, { last_login_at: new Date() });
       if ((updateRes.affected ?? 0) <= 0) {
         return Result.error({
           error: ['Unable to update user last_login_at'],
@@ -244,11 +194,7 @@ export class UserService {
       }
       return Result.success(user);
     } catch (error) {
-      return Result.error({
-        error: error,
-        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      });
+      return Result.error({ error, errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
-
 }

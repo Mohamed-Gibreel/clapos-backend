@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Role } from 'src/role/entities/role.entity';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -59,9 +60,9 @@ export class SeedService implements OnApplicationBootstrap {
     if (!user) {
       user = this.userRepo.create({
         role: role,
-        name: 'string',
+        name: 'superadmin',
         tenant: tenant,
-        password: 'string',
+        password: await bcrypt.hash('admin123', 10),
         emailAddress: adminEmail,
       });
       await this.userRepo.save(user);

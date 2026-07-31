@@ -16,6 +16,7 @@ import { CreateUserDTO } from './dto/create-user.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiTenantHeader } from 'src/utils/decorators/tenant-header.decorator';
 import { Role, Roles } from 'src/utils/decorators/roles.decorator';
+import { TenantId } from 'src/utils/decorators/tenant.decorator';
 
 @ApiBearerAuth()
 @ApiTenantHeader()
@@ -30,8 +31,8 @@ export class UserController {
   }
 
   @Get()
-  async findAll() {
-    return await this.userService.getAll();
+  async findAll(@TenantId() tenantId: string) {
+    return await this.userService.getAll(tenantId);
   }
 
   @Get(':id')
