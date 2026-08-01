@@ -12,6 +12,8 @@ import { CustomerService } from 'src/customer/customer.service';
 import { TerminalService } from 'src/terminal/terminal.service';
 import { UserService } from 'src/user/user.service';
 
+import { Customer } from 'src/customer/entities/customer.entity';
+import { PosTerminal } from 'src/terminal/entities/terminal.entity';
 import { Order, DiscountType, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderItemVariation } from './entities/order-item-variation.entity';
@@ -92,14 +94,14 @@ export class OrderService {
     }
 
     // Resolve optional customer
-    let customer: import('src/customer/entities/customer.entity').Customer | null = null;
+    let customer: Customer | null = null;
     if (v.customerId) {
       const custRes = await this.customerService.findOne({ where: { id: v.customerId } });
       if (custRes.isSuccess) customer = custRes.value;
     }
 
     // Resolve optional terminal
-    let terminal: import('src/terminal/entities/terminal.entity').PosTerminal | null = null;
+    let terminal: PosTerminal | null = null;
     if (v.terminalId) {
       const termRes = await this.terminalService.findOne({ where: { id: v.terminalId } });
       if (termRes.isSuccess) terminal = termRes.value;

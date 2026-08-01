@@ -7,6 +7,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { CategoryService } from 'src/category/category.service';
+import { Category } from 'src/category/entities/category.entity';
 
 import { Product } from './entities/product.entity';
 import { VariationGroup } from './entities/variation-group.entity';
@@ -35,7 +36,7 @@ export class ProductService {
       const v = isValid.value;
 
       // Resolve category if provided
-      let category: import('src/category/entities/category.entity').Category | null = null;
+      let category: Category | null = null;
       if (v.categoryId) {
         const catRes = await this.categoryService.findOne({ where: { id: v.categoryId } });
         if (!catRes.isSuccess) {
