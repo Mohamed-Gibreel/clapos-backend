@@ -83,6 +83,20 @@ export class TaxConfigService {
     }
   }
 
+  async delete(id: string) {
+    const Result = createResultClass<void, string[]>();
+    try {
+      const existing = await this.findOne({ where: { id } });
+      if (!existing.isSuccess) {
+        return Result.error({ error: existing.error, errorCode: existing.errorCode });
+      }
+      await this.taxConfigRepo.softDeleteWithTenant(id);
+      return Result.success(undefined);
+    } catch (error) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
+  }
+
   async findOne(options: FindOneOptions<TaxConfig>) {
     const Result = createResultClass<TaxConfig, string[]>();
     try {
