@@ -672,18 +672,19 @@ These endpoints must exist before the app is usable as a POS:
 - [x] `GET /orders` + `GET /orders/:id`
 - [x] `GET /reports/summary`
 
-### Phase 2 — Operations (partially done)
+### Phase 2 — Operations ✅
 - [x] `PATCH /orders/:id/status`
 - [x] `POST /orders/:id/void` + `POST /orders/:id/refund`
 - [x] Full reports suite with `terminalId` filter (`/reports/sales`, `/reports/top-products`, `/reports/product-status`, `/reports/recent-orders`)
-- [ ] Tax config endpoints
-- [ ] Feature flags endpoint
-- [ ] Discount/voucher endpoints
-- [ ] `eventId` filter on reports
+- [x] Tax config endpoints (`GET/POST/PATCH /tax-config`)
+- [x] Feature flags endpoint (`GET /feature-flags`, manager+ CRUD)
+- [x] Discount/voucher endpoints (`GET/POST/PATCH/DELETE /discounts`, `POST /discounts/validate`)
+- [x] `eventId` filter on all report endpoints (server joins via TerminalEvent → terminal IDs)
+- [x] TaxConfig + FeatureFlags included in `GET /sync/catalog` response
 
 ### Phase 3 — Growth Features
-- [ ] Events + TerminalEvent assignments
-- [ ] Event performance reporting (`?eventId=` filter on all reports)
+- [ ] Events + TerminalEvent management endpoints (entities already exist)
+- [ ] Event performance reporting — `?eventId=` on reports already works; SuperAdmin cross-tenant view
 - [ ] Table management endpoints
 - [ ] Customer membership endpoints
 - [ ] Real-time table status (WebSocket)
