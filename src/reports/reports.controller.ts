@@ -17,9 +17,8 @@ export class ReportsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('terminalId') terminalId?: string,
-    @Query('eventId') eventId?: string,
   ) {
-    return this.reportsService.getSummary({ from, to, terminalId, eventId });
+    return this.reportsService.getSummary({ from, to, terminalId });
   }
 
   @Get('recent-orders')

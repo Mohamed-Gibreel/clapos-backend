@@ -1,12 +1,11 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { DataSource, FindManyOptions } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
 
 import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
+import { TenantContextService } from 'src/tenant/tenant-context.service';
 import { ProductService } from 'src/product/product.service';
 import { CustomerService } from 'src/customer/customer.service';
 import { TerminalService } from 'src/terminal/terminal.service';
@@ -25,6 +24,7 @@ export class OrderService {
   constructor(
     @TenantRepository(Order)
     private readonly orderRepo: TenantScopedRepository<Order>,
+    private readonly tenantContext: TenantContextService,
     private readonly productService: ProductService,
     private readonly customerService: CustomerService,
     private readonly terminalService: TerminalService,
@@ -53,7 +53,9 @@ export class OrderService {
   }
 
   async syncOrders(dto: SyncOrdersDTO, cashierId: number) {
-    const results: Array<{ clientId: string; serverId: string | null; orderNumber: string | null; status: string; error?: string }> = [];
+    type SyncResult = { clientId: string; serverId: string | null; orderNumber: string | null; status: string; error?: string };
+    const Result = createResultClass<{ results: SyncResult[] }, string[]>();
+    const results: SyncResult[] = [];
 
     // Process in clientCreatedAt order
     const sorted = [...dto.orders].sort(
@@ -81,7 +83,7 @@ export class OrderService {
       }
     }
 
-    return { results };
+    return Result.success({ results });
   }
 
   private async buildAndSaveOrder(v: CreateOrderDTO, clientId: string, cashierId: number, isOffline: boolean) {
@@ -220,7 +222,7 @@ export class OrderService {
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.terminal', 'terminal')
         .leftJoinAndSelect('order.cashier', 'cashier')
-        .where('tenant.id = :tenantId', { tenantId: (this.orderRepo as any).tenantId })
+        .where('tenant.id = :tenantId', { tenantId: this.tenantContext.getTenantId() })
         .andWhere('order.deletedAt IS NULL')
         .orderBy('order.clientCreatedAt', 'DESC')
         .skip(skip)

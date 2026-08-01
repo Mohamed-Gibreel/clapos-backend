@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { createResultClass } from 'src/utils/result';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
+import { TenantContextService } from 'src/tenant/tenant-context.service';
 import { Order, OrderStatus } from 'src/order/entities/order.entity';
 import { Customer } from 'src/customer/entities/customer.entity';
 
@@ -12,17 +13,17 @@ export class ReportsService {
     private readonly orderRepo: TenantScopedRepository<Order>,
     @TenantRepository(Customer)
     private readonly customerRepo: TenantScopedRepository<Customer>,
+    private readonly tenantContext: TenantContextService,
   ) {}
 
   async getSummary(query: {
     from?: string;
     to?: string;
     terminalId?: string;
-    eventId?: string;
   }) {
     const Result = createResultClass<any, string[]>();
     try {
-      const tenantId = (this.orderRepo as any).tenantId;
+      const tenantId = this.tenantContext.getTenantId();
       const from = query.from ? new Date(query.from) : this.startOfDay(new Date());
       const to = query.to ? new Date(query.to) : new Date();
 
@@ -86,7 +87,7 @@ export class ReportsService {
   async getRecentOrders(query: { limit?: number; terminalId?: string }) {
     const Result = createResultClass<Order[], string[]>();
     try {
-      const tenantId = (this.orderRepo as any).tenantId;
+      const tenantId = this.tenantContext.getTenantId();
       const limit = Math.min(query.limit ?? 5, 50);
 
       const qb = this.orderRepo

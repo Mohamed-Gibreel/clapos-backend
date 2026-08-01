@@ -6,6 +6,7 @@ import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
+import { TenantContextService } from 'src/tenant/tenant-context.service';
 
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDTO } from './dto/create-customer.dto';
@@ -16,6 +17,7 @@ export class CustomerService {
   constructor(
     @TenantRepository(Customer)
     private readonly customerRepo: TenantScopedRepository<Customer>,
+    private readonly tenantContext: TenantContextService,
   ) {}
 
   async create(dto: CreateCustomerDTO) {
@@ -62,7 +64,7 @@ export class CustomerService {
 
       const qb = this.customerRepo.createQueryBuilder('customer')
         .innerJoin('customer.tenant', 'tenant')
-        .where('tenant.id = :tenantId', { tenantId: (this.customerRepo as any).tenantId })
+        .where('tenant.id = :tenantId', { tenantId: this.tenantContext.getTenantId() })
         .andWhere('customer.deletedAt IS NULL')
         .orderBy('customer.createdAt', 'DESC')
         .skip(skip)

@@ -1,6 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { DataSource, FindManyOptions, FindOneOptions, Repository } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
+import { FindManyOptions, FindOneOptions, FindOptionsWhere } from 'typeorm';
 
 import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
@@ -9,7 +8,7 @@ import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { CategoryService } from 'src/category/category.service';
 import { Category } from 'src/category/entities/category.entity';
 
-import { Product } from './entities/product.entity';
+import { Product, ProductStatus } from './entities/product.entity';
 import { VariationGroup } from './entities/variation-group.entity';
 import { VariationOption } from './entities/variation-option.entity';
 import { CreateProductDTO } from './dto/create-product.dto';
@@ -20,8 +19,6 @@ export class ProductService {
   constructor(
     @TenantRepository(Product)
     private readonly productRepo: TenantScopedRepository<Product>,
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
     private readonly categoryService: CategoryService,
   ) {}
 
@@ -51,7 +48,7 @@ export class ProductService {
       product.sku = v.sku;
       product.price = v.price;
       product.imageUrl = v.imageUrl;
-      product.status = v.status ?? 'active' as any;
+      product.status = v.status ?? ProductStatus.Active;
       product.category = category;
 
       // Build variation groups
@@ -86,8 +83,8 @@ export class ProductService {
   async getAll(options: { status?: string } = {}) {
     const Result = createResultClass<Product[], string[]>();
     try {
-      const where: any = {};
-      if (options.status) where.status = options.status;
+      const where: FindOptionsWhere<Product> = {};
+      if (options.status) where.status = options.status as ProductStatus;
 
       const products = await this.productRepo.find({
         where,
@@ -131,7 +128,7 @@ export class ProductService {
 
       if (categoryId !== undefined) {
         if (categoryId === null) {
-          (existing.value as any).category = null;
+          existing.value.category = null;
         } else {
           const catRes = await this.categoryService.findOne({ where: { id: categoryId } });
           if (!catRes.isSuccess) {
