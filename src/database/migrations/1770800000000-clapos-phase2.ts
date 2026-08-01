@@ -96,7 +96,7 @@ export class ClaposPhase21770800000000 implements MigrationInterface {
         "deletedAt" TIMESTAMP,
         "terminalId" uuid NOT NULL,
         "eventId" uuid NOT NULL,
-        "assignedById" uuid,
+        "assignedById" integer,
         "assignedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "UQ_terminal_event" UNIQUE ("terminalId", "eventId"),
         CONSTRAINT "PK_terminal_event" PRIMARY KEY ("id")
