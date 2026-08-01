@@ -54,6 +54,7 @@ pids
 
 # Docker Postgres Volume
 /src/database/data
+/src/database/[0-9]*/
 
 # Docker Redis Volume
 /src/redis/data
