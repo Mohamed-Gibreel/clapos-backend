@@ -20,6 +20,8 @@ import { OrderItem } from './entities/order-item.entity';
 import { OrderItemVariation } from './entities/order-item-variation.entity';
 import { CreateOrderDTO } from './dto/create-order.dto';
 import { SyncOrdersDTO } from './dto/sync-orders.dto';
+import { VoidOrderDTO } from './dto/void-order.dto';
+import { RefundOrderDTO } from './dto/refund-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -104,12 +106,47 @@ export class OrderService {
     }
   }
 
-  async void(id: string) {
-    return this.updateStatus(id, OrderStatus.Cancelled);
+  async void(id: string, dto: VoidOrderDTO) {
+    const Result = createResultClass<Order, string[]>();
+    try {
+      const order = await this.orderRepo.findOne({ where: { id } });
+      if (!order) {
+        return Result.error({ error: [ErrorCode.ORDER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
+      }
+      const voidableStatuses: OrderStatus[] = [OrderStatus.Open, OrderStatus.InProgress, OrderStatus.Completed];
+      if (!voidableStatuses.includes(order.status)) {
+        return Result.error({ error: [ErrorCode.ORDER_CANNOT_BE_VOIDED], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
+      }
+      await this.orderRepo.update({ id }, { status: OrderStatus.Voided, reason: dto.reason });
+      order.status = OrderStatus.Voided;
+      order.reason = dto.reason;
+      return Result.success(order);
+    } catch (error) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
   }
 
-  async refund(id: string) {
-    return this.updateStatus(id, OrderStatus.Cancelled);
+  async refund(id: string, dto: RefundOrderDTO) {
+    const Result = createResultClass<Order, string[]>();
+    try {
+      const order = await this.orderRepo.findOne({ where: { id } });
+      if (!order) {
+        return Result.error({ error: [ErrorCode.ORDER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
+      }
+      if (order.status !== OrderStatus.Completed) {
+        return Result.error({ error: [ErrorCode.ORDER_CANNOT_BE_REFUNDED], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
+      }
+      if (dto.refundAmount > Number(order.total)) {
+        return Result.error({ error: [ErrorCode.REFUND_AMOUNT_EXCEEDS_TOTAL], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
+      }
+      await this.orderRepo.update({ id }, { status: OrderStatus.Refunded, refundAmount: dto.refundAmount, reason: dto.reason });
+      order.status = OrderStatus.Refunded;
+      order.refundAmount = dto.refundAmount;
+      order.reason = dto.reason;
+      return Result.success(order);
+    } catch (error) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
   }
 
   private async buildAndSaveOrder(v: CreateOrderDTO, clientId: string, cashierId: string, isOffline: boolean) {

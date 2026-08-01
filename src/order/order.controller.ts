@@ -19,6 +19,8 @@ import { OrderService } from './order.service';
 import { CreateOrderDTO } from './dto/create-order.dto';
 import { SyncOrdersDTO } from './dto/sync-orders.dto';
 import { UpdateOrderStatusDTO } from './dto/update-order-status.dto';
+import { VoidOrderDTO } from './dto/void-order.dto';
+import { RefundOrderDTO } from './dto/refund-order.dto';
 
 @ApiBearerAuth()
 @ApiTenantHeader()
@@ -72,14 +74,14 @@ export class OrderController {
   @Post(':id/void')
   @HttpCode(HttpStatus.OK)
   @Role([Roles.Manager, Roles.Owner])
-  void(@Param('id', ParseUUIDPipe) id: string) {
-    return this.orderService.void(id);
+  void(@Param('id', ParseUUIDPipe) id: string, @Body() dto: VoidOrderDTO) {
+    return this.orderService.void(id, dto);
   }
 
   @Post(':id/refund')
   @HttpCode(HttpStatus.OK)
   @Role([Roles.Manager, Roles.Owner])
-  refund(@Param('id', ParseUUIDPipe) id: string) {
-    return this.orderService.refund(id);
+  refund(@Param('id', ParseUUIDPipe) id: string, @Body() dto: RefundOrderDTO) {
+    return this.orderService.refund(id, dto);
   }
 }

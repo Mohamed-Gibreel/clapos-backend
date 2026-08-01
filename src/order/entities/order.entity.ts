@@ -18,6 +18,8 @@ export enum OrderStatus {
   InProgress = 'in_progress',
   Completed = 'completed',
   Cancelled = 'cancelled',
+  Voided = 'voided',
+  Refunded = 'refunded',
 }
 
 export enum OrderType {
@@ -77,6 +79,12 @@ export class Order extends BaseEntity {
 
   @Column({ nullable: true })
   notes?: string;
+
+  @Column({ nullable: true })
+  reason?: string;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  refundAmount?: number;
 
   @Column({ type: 'timestamp' })
   clientCreatedAt: Date;
