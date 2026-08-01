@@ -6,6 +6,7 @@ import { Role } from './entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
+import { ErrorCode } from 'src/utils/error-codes';
 
 @Injectable()
 export class RoleService {
@@ -109,7 +110,7 @@ export class RoleService {
 
       if ((updateResult.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to update role'],
+          error: [ErrorCode.ROLE_UPDATE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -143,7 +144,7 @@ export class RoleService {
 
       if ((deleteResult.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to delete role'],
+          error: [ErrorCode.ROLE_DELETE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -175,7 +176,7 @@ export class RoleService {
       const role = await this.rolesRepository.findOne(options);
       if (role == null) {
         return Result.error({
-          error: ['Role not found'],
+          error: [ErrorCode.ROLE_NOT_FOUND],
           errorCode: HttpStatus.NOT_FOUND,
         });
       }

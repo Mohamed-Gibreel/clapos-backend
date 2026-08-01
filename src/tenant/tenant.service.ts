@@ -12,6 +12,7 @@ import { Tenant } from './entities/tenant.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { getRepo } from 'src/utils/get-repository';
+import { ErrorCode } from 'src/utils/error-codes';
 
 @Injectable()
 export class TenantService {
@@ -67,7 +68,7 @@ export class TenantService {
 
       if (!tenant) {
         return Result.error({
-          error: ['Tenant not found'],
+          error: [ErrorCode.TENANT_NOT_FOUND],
           errorCode: HttpStatus.NOT_FOUND,
         });
       }
@@ -116,7 +117,7 @@ export class TenantService {
 
       if ((updateResult.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to update tenant'],
+          error: [ErrorCode.TENANT_UPDATE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -150,7 +151,7 @@ export class TenantService {
 
       if ((deleteResult.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to delete tenant'],
+          error: [ErrorCode.TENANT_DELETE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -182,7 +183,7 @@ export class TenantService {
       const tenant = await this.tenantsRepository.findOne(options);
       if (tenant == null) {
         return Result.error({
-          error: ['Tenant not found'],
+          error: [ErrorCode.TENANT_NOT_FOUND],
           errorCode: HttpStatus.NOT_FOUND,
         });
       }

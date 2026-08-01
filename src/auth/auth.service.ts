@@ -8,6 +8,7 @@ import { LoggedInUser } from 'src/user/dto/logged-in-user.dto';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { JwtService } from '@nestjs/jwt';
 import { deriveTenantSecret } from 'src/utils/get-tenant-secret';
+import { ErrorCode } from 'src/utils/error-codes';
 
 @Injectable()
 export class AuthService {
@@ -62,7 +63,7 @@ export class AuthService {
 
       if (!loggedInUser.isSuccess) {
         return Result.error({
-          error: ['Unable to convert user instance'],
+          error: [ErrorCode.USER_SERIALIZATION_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -77,7 +78,7 @@ export class AuthService {
     try {
       const isTokenValid = this.verifyRefreshToken(token, tenantId);
       if (!isTokenValid.isSuccess) {
-        return Result.error({ error: ['Invalid token'], errorCode: HttpStatus.UNAUTHORIZED });
+        return Result.error({ error: [ErrorCode.INVALID_TOKEN], errorCode: HttpStatus.UNAUTHORIZED });
       }
 
       const decodedToken = this.decodeToken(token);
@@ -110,7 +111,7 @@ export class AuthService {
     try {
       const value = this.jwtService.decode(token);
       if (value == null) {
-        return Result.error({ error: 'Invalid token', errorCode: HttpStatus.UNAUTHORIZED });
+        return Result.error({ error: ErrorCode.INVALID_TOKEN, errorCode: HttpStatus.UNAUTHORIZED });
       }
       return Result.success(value);
     } catch (error) {

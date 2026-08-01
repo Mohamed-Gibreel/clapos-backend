@@ -2,6 +2,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { deriveTenantSecret } from '../get-tenant-secret';
+import { ErrorCode } from '../error-codes';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -14,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
         if (!tenantId || typeof tenantId !== 'string') {
           return done(
-            new UnauthorizedException('Missing or invalid tenant ID'),
+            new UnauthorizedException(ErrorCode.MISSING_TENANT_ID),
           );
         }
 
@@ -22,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         const tenantSecret = deriveTenantSecret(tenantId);
 
         if (!tenantSecret) {
-          return done(new UnauthorizedException('Invalid tenant'));
+          return done(new UnauthorizedException(ErrorCode.INVALID_TENANT));
         }
 
         return done(null, tenantSecret);
