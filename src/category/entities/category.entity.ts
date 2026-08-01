@@ -1,0 +1,25 @@
+import { Expose } from 'class-transformer';
+import { Tenant } from 'src/tenant/entities/tenant.entity';
+import { BaseEntity } from 'src/utils/entities/base.entity';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm';
+
+@Entity()
+@Expose()
+@Unique(['name', 'tenant'])
+export class Category extends BaseEntity {
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  icon?: string;
+
+  @Column({ default: 0 })
+  sortOrder: number;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @JoinColumn()
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
+}

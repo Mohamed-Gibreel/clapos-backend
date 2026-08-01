@@ -38,6 +38,13 @@ import { RoleModule } from './role/role.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './seed/seed.module';
 import { TenantModule } from './tenant/tenant.module';
+import { TerminalModule } from './terminal/terminal.module';
+import { CategoryModule } from './category/category.module';
+import { ProductModule } from './product/product.module';
+import { CustomerModule } from './customer/customer.module';
+import { OrderModule } from './order/order.module';
+import { SyncModule } from './sync/sync.module';
+import { ReportsModule } from './reports/reports.module';
 
 const typeormConfig: TypeOrmModuleAsyncOptions = {
   imports: [ConfigModule],
@@ -89,6 +96,13 @@ const bullmqConfig: SharedBullAsyncConfiguration = {
     RoleModule,
     SeedModule,
     TenantModule,
+    TerminalModule,
+    CategoryModule,
+    ProductModule,
+    CustomerModule,
+    OrderModule,
+    SyncModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [
