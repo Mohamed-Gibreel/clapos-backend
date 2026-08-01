@@ -12,7 +12,6 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { ApiTenantHeader } from 'src/utils/decorators/tenant-header.decorator';
 import { Role, Roles } from 'src/utils/decorators/roles.decorator';
-import { IsPublic } from 'src/utils/decorators/is-public.decorator';
 import { CategoryService } from './category.service';
 import { CreateCategoryDTO } from './dto/create-category.dto';
 import { UpdateCategoryDTO } from './dto/update-category.dto';

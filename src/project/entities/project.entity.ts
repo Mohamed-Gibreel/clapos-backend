@@ -17,6 +17,6 @@ export class Project extends BaseEntity {
   name: string;
 
   @JoinColumn()
-  @ManyToOne(() => Tenant, (t) => t.projects)
+  @ManyToOne(() => Tenant)
   tenant: Tenant;
 }

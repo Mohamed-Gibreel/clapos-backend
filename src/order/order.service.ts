@@ -64,7 +64,7 @@ export class OrderService {
         // Idempotency check
         const existing = await this.orderRepo.findOne({ where: { clientId } });
         if (existing) {
-          results.push({ clientId, serverId: existing.id, orderNumber: existing.orderNumber, status: 'already_exists' });
+          results.push({ clientId, serverId: existing.id, orderNumber: existing.orderNumber ?? null, status: 'already_exists' });
           continue;
         }
 
@@ -72,7 +72,7 @@ export class OrderService {
         if (!saved.isSuccess) {
           results.push({ clientId, serverId: null, orderNumber: null, status: 'failed', error: saved.error?.join(', ') });
         } else {
-          results.push({ clientId, serverId: saved.value.id, orderNumber: saved.value.orderNumber, status: 'created' });
+          results.push({ clientId, serverId: saved.value.id, orderNumber: saved.value.orderNumber ?? null, status: 'created' });
         }
       } catch (error) {
         results.push({ clientId, serverId: null, orderNumber: null, status: 'failed', error: error.message });
@@ -92,14 +92,14 @@ export class OrderService {
     }
 
     // Resolve optional customer
-    let customer = null;
+    let customer: import('src/customer/entities/customer.entity').Customer | null = null;
     if (v.customerId) {
       const custRes = await this.customerService.findOne({ where: { id: v.customerId } });
       if (custRes.isSuccess) customer = custRes.value;
     }
 
     // Resolve optional terminal
-    let terminal = null;
+    let terminal: import('src/terminal/entities/terminal.entity').PosTerminal | null = null;
     if (v.terminalId) {
       const termRes = await this.terminalService.findOne({ where: { id: v.terminalId } });
       if (termRes.isSuccess) terminal = termRes.value;

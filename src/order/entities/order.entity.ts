@@ -90,11 +90,11 @@ export class Order extends BaseEntity {
 
   @JoinColumn()
   @ManyToOne(() => PosTerminal, { nullable: true })
-  terminal?: PosTerminal;
+  terminal: PosTerminal | null;
 
   @JoinColumn()
   @ManyToOne(() => Customer, { nullable: true })
-  customer?: Customer;
+  customer: Customer | null;
 
   @JoinColumn()
   @ManyToOne(() => User)

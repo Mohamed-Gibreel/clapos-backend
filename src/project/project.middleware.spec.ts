@@ -1,7 +1,9 @@
 import { ProjectMiddleware } from './project.middleware';
+import { ProjectContextService } from './project-context.service';
 
 describe('ProjectMiddleware', () => {
   it('should be defined', () => {
-    expect(new ProjectMiddleware()).toBeDefined();
+    const middleware = new ProjectMiddleware({} as ProjectContextService);
+    expect(middleware).toBeDefined();
   });
 });

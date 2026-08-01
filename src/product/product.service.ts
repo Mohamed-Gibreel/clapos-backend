@@ -35,7 +35,7 @@ export class ProductService {
       const v = isValid.value;
 
       // Resolve category if provided
-      let category = null;
+      let category: import('src/category/entities/category.entity').Category | null = null;
       if (v.categoryId) {
         const catRes = await this.categoryService.findOne({ where: { id: v.categoryId } });
         if (!catRes.isSuccess) {
@@ -130,7 +130,7 @@ export class ProductService {
 
       if (categoryId !== undefined) {
         if (categoryId === null) {
-          existing.value.category = null;
+          (existing.value as any).category = null;
         } else {
           const catRes = await this.categoryService.findOne({ where: { id: categoryId } });
           if (!catRes.isSuccess) {

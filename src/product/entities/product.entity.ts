@@ -42,7 +42,7 @@ export class Product extends BaseEntity {
 
   @JoinColumn()
   @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
-  category?: Category;
+  category: Category | null;
 
   @JoinColumn()
   @ManyToOne(() => Tenant)
