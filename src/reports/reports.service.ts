@@ -3,6 +3,7 @@ import { createResultClass } from 'src/utils/result';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { TenantContextService } from 'src/tenant/tenant-context.service';
+import { ErrorCode } from 'src/utils/error-codes';
 import { Order, OrderStatus } from 'src/order/entities/order.entity';
 import { Customer } from 'src/customer/entities/customer.entity';
 
@@ -80,7 +81,7 @@ export class ReportsService {
         period: { from: from.toISOString(), to: to.toISOString() },
       });
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -108,7 +109,7 @@ export class ReportsService {
       const orders = await qb.getMany();
       return Result.success(orders);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 

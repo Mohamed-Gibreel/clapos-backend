@@ -14,6 +14,7 @@ import { TenantService } from 'src/tenant/tenant.service';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { getRepo } from 'src/utils/get-repository';
+import { ErrorCode } from 'src/utils/error-codes';
 
 @Injectable()
 export class ProjectService {
@@ -22,6 +23,7 @@ export class ProjectService {
     private readonly projectsRepository: TenantScopedRepository<Project>,
     private tenantService: TenantService,
   ) {}
+
   async create(createProjectDto: CreateProjectDTO) {
     const Result = createResultClass<Project, string[]>();
     try {
@@ -56,13 +58,13 @@ export class ProjectService {
         const err = error as any;
         if (err.code === '23505') {
           return Result.error({
-            error: [error.message],
+            error: [ErrorCode.PROJECT_NAME_CONFLICT],
             errorCode: HttpStatus.CONFLICT,
           });
         }
       }
       return Result.error({
-        error: error,
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
@@ -77,7 +79,7 @@ export class ProjectService {
       return Result.success(projects);
     } catch (error) {
       return Result.error({
-        error: error,
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
@@ -102,7 +104,7 @@ export class ProjectService {
       return Result.success(project.value);
     } catch (error) {
       return Result.error({
-        error: error,
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
@@ -144,14 +146,14 @@ export class ProjectService {
 
       if ((updateResult.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to update project'],
+          error: [ErrorCode.PROJECT_UPDATE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
       return Result.success(updatedProject);
     } catch (error) {
       return Result.error({
-        error: error,
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
@@ -178,14 +180,14 @@ export class ProjectService {
 
       if ((deleteResult.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to delete project'],
+          error: [ErrorCode.PROJECT_DELETE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
       return Result.success('Deleted project successfully');
     } catch (error) {
       return Result.error({
-        error: error,
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
@@ -198,7 +200,7 @@ export class ProjectService {
       return Result.success(projects);
     } catch (error) {
       return Result.error({
-        error: [error],
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }
@@ -211,14 +213,14 @@ export class ProjectService {
       const project = await projectRepo.findOne(options);
       if (project == null) {
         return Result.error({
-          error: ['Project not found'],
+          error: [ErrorCode.PROJECT_NOT_FOUND],
           errorCode: HttpStatus.NOT_FOUND,
         });
       }
       return Result.success(project);
     } catch (error) {
       return Result.error({
-        error: [error],
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }

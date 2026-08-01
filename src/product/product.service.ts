@@ -5,6 +5,7 @@ import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
+import { ErrorCode } from 'src/utils/error-codes';
 import { CategoryService } from 'src/category/category.service';
 import { Category } from 'src/category/entities/category.entity';
 
@@ -37,7 +38,7 @@ export class ProductService {
       if (v.categoryId) {
         const catRes = await this.categoryService.findOne({ where: { id: v.categoryId } });
         if (!catRes.isSuccess) {
-          return Result.error({ error: ['Category not found'], errorCode: HttpStatus.BAD_REQUEST });
+          return Result.error({ error: [ErrorCode.CATEGORY_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
         }
         category = catRes.value;
       }
@@ -74,9 +75,9 @@ export class ProductService {
       return Result.success(saved);
     } catch (error) {
       if (error?.code === '23505') {
-        return Result.error({ error: ['SKU already exists for this tenant'], errorCode: HttpStatus.CONFLICT });
+        return Result.error({ error: [ErrorCode.PRODUCT_SKU_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -93,7 +94,7 @@ export class ProductService {
       });
       return Result.success(products);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -107,7 +108,7 @@ export class ProductService {
       if (!res.isSuccess) return Result.error({ error: res.error, errorCode: res.errorCode });
       return Result.success(res.value);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -132,7 +133,7 @@ export class ProductService {
         } else {
           const catRes = await this.categoryService.findOne({ where: { id: categoryId } });
           if (!catRes.isSuccess) {
-            return Result.error({ error: ['Category not found'], errorCode: HttpStatus.BAD_REQUEST });
+            return Result.error({ error: [ErrorCode.CATEGORY_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
           }
           existing.value.category = catRes.value;
         }
@@ -143,9 +144,9 @@ export class ProductService {
       return Result.success(merged);
     } catch (error) {
       if (error?.code === '23505') {
-        return Result.error({ error: ['SKU already exists for this tenant'], errorCode: HttpStatus.CONFLICT });
+        return Result.error({ error: [ErrorCode.PRODUCT_SKU_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -160,7 +161,7 @@ export class ProductService {
       await this.productRepo.softDeleteWithTenant(id);
       return Result.success('Product deleted successfully');
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -169,11 +170,11 @@ export class ProductService {
     try {
       const product = await this.productRepo.findOne(options);
       if (!product) {
-        return Result.error({ error: ['Product not found'], errorCode: HttpStatus.NOT_FOUND });
+        return Result.error({ error: [ErrorCode.PRODUCT_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
       }
       return Result.success(product);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -183,7 +184,7 @@ export class ProductService {
       const products = await this.productRepo.find(options);
       return Result.success(products);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 }

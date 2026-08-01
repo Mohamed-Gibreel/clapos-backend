@@ -7,6 +7,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { TenantContextService } from 'src/tenant/tenant-context.service';
+import { ErrorCode } from 'src/utils/error-codes';
 
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDTO } from './dto/create-customer.dto';
@@ -51,7 +52,7 @@ export class CustomerService {
       const saved = await this.customerRepo.saveWithTenant(customer);
       return Result.success(saved);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -84,7 +85,7 @@ export class CustomerService {
       const [data, total] = await qb.getManyAndCount();
       return Result.success({ data, total });
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -95,7 +96,7 @@ export class CustomerService {
       if (!res.isSuccess) return Result.error({ error: res.error, errorCode: res.errorCode });
       return Result.success(res.value);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -116,7 +117,7 @@ export class CustomerService {
       await this.customerRepo.save(merged);
       return Result.success(merged);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -131,7 +132,7 @@ export class CustomerService {
       await this.customerRepo.softDeleteWithTenant(id);
       return Result.success('Customer deleted successfully');
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -140,11 +141,11 @@ export class CustomerService {
     try {
       const customer = await this.customerRepo.findOne(options);
       if (!customer) {
-        return Result.error({ error: ['Customer not found'], errorCode: HttpStatus.NOT_FOUND });
+        return Result.error({ error: [ErrorCode.CUSTOMER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
       }
       return Result.success(customer);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 }

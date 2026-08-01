@@ -6,6 +6,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { TenantContextService } from 'src/tenant/tenant-context.service';
+import { ErrorCode } from 'src/utils/error-codes';
 import { ProductService } from 'src/product/product.service';
 import { CustomerService } from 'src/customer/customer.service';
 import { TerminalService } from 'src/terminal/terminal.service';
@@ -48,7 +49,7 @@ export class OrderService {
 
       return this.buildAndSaveOrder(v, clientId, cashierId, false);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -79,7 +80,7 @@ export class OrderService {
           results.push({ clientId, serverId: saved.value.id, orderNumber: saved.value.orderNumber ?? null, status: 'created' });
         }
       } catch (error) {
-        results.push({ clientId, serverId: null, orderNumber: null, status: 'failed', error: error.message });
+        results.push({ clientId, serverId: null, orderNumber: null, status: 'failed', error: ErrorCode.INTERNAL_SERVER_ERROR });
       }
     }
 
@@ -92,7 +93,7 @@ export class OrderService {
     // Resolve cashier
     const cashierRes = await this.userService.findOne({ where: { id: cashierId } });
     if (!cashierRes.isSuccess) {
-      return Result.error({ error: ['Cashier not found'], errorCode: HttpStatus.BAD_REQUEST });
+      return Result.error({ error: [ErrorCode.CASHIER_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
     }
 
     // Resolve optional customer
@@ -134,7 +135,7 @@ export class OrderService {
         if (itemDto.productId) {
           const prodRes = await this.productService.findOne({ where: { id: itemDto.productId } });
           if (!prodRes.isSuccess) {
-            return Result.error({ error: [`Product ${itemDto.productId} not found`], errorCode: HttpStatus.BAD_REQUEST });
+            return Result.error({ error: [ErrorCode.PRODUCT_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
           }
           item.name = prodRes.value.name;
           item.unitPrice = Number(prodRes.value.price);
@@ -237,7 +238,7 @@ export class OrderService {
       const [data, total] = await qb.getManyAndCount();
       return Result.success({ data, total });
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -249,11 +250,11 @@ export class OrderService {
         relations: ['items', 'items.variations', 'customer', 'terminal', 'cashier'],
       });
       if (!order) {
-        return Result.error({ error: ['Order not found'], errorCode: HttpStatus.NOT_FOUND });
+        return Result.error({ error: [ErrorCode.ORDER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
       }
       return Result.success(order);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 

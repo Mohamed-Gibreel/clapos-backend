@@ -5,6 +5,7 @@ import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
+import { ErrorCode } from 'src/utils/error-codes';
 
 import { Category } from './entities/category.entity';
 import { CreateCategoryDTO } from './dto/create-category.dto';
@@ -35,9 +36,9 @@ export class CategoryService {
       return Result.success(saved);
     } catch (error) {
       if (error?.code === '23505') {
-        return Result.error({ error: ['Category name already exists'], errorCode: HttpStatus.CONFLICT });
+        return Result.error({ error: [ErrorCode.CATEGORY_NAME_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -47,7 +48,7 @@ export class CategoryService {
       const categories = await this.categoryRepo.find({ order: { sortOrder: 'ASC' } });
       return Result.success(categories);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -58,7 +59,7 @@ export class CategoryService {
       if (!res.isSuccess) return Result.error({ error: res.error, errorCode: res.errorCode });
       return Result.success(res.value);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -79,14 +80,14 @@ export class CategoryService {
       const updateRes = await this.categoryRepo.update({ id }, merged);
 
       if ((updateRes.affected ?? 0) <= 0) {
-        return Result.error({ error: ['Unable to update category'], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
+        return Result.error({ error: [ErrorCode.CATEGORY_UPDATE_FAILED], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
       }
       return Result.success(merged);
     } catch (error) {
       if (error?.code === '23505') {
-        return Result.error({ error: ['Category name already exists'], errorCode: HttpStatus.CONFLICT });
+        return Result.error({ error: [ErrorCode.CATEGORY_NAME_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -101,7 +102,7 @@ export class CategoryService {
       await this.categoryRepo.softDeleteWithTenant(id);
       return Result.success('Category deleted successfully');
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -110,11 +111,11 @@ export class CategoryService {
     try {
       const category = await this.categoryRepo.findOne(options);
       if (!category) {
-        return Result.error({ error: ['Category not found'], errorCode: HttpStatus.NOT_FOUND });
+        return Result.error({ error: [ErrorCode.CATEGORY_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
       }
       return Result.success(category);
     } catch (error) {
-      return Result.error({ error: [error.message], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 }

@@ -10,6 +10,7 @@ import { createResultClass, ResultType } from '../utils/result';
 import { RoleService } from 'src/role/role.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { Roles } from 'src/utils/decorators/roles.decorator';
+import { ErrorCode } from 'src/utils/error-codes';
 
 @Injectable()
 export class UserService {
@@ -40,7 +41,7 @@ export class UserService {
 
       if (userAlreadyExists) {
         return Result.error({
-          error: ['User already exists'],
+          error: [ErrorCode.USER_ALREADY_EXISTS],
           errorCode: HttpStatus.BAD_REQUEST,
         });
       }
@@ -51,16 +52,14 @@ export class UserService {
 
       if (!role.isSuccess) {
         return Result.error({
-          error: ['Role does not exist'],
+          error: [ErrorCode.ROLE_NOT_FOUND],
           errorCode: HttpStatus.BAD_REQUEST,
         });
       }
 
       if (!this.allowedRoles.includes(role.value.name)) {
         return Result.error({
-          error: [
-            `You can only create users with one of the following roles: ${this.allowedRoles.join(', ')}`,
-          ],
+          error: [ErrorCode.INVALID_ROLE],
           errorCode: HttpStatus.BAD_REQUEST,
         });
       }
@@ -71,7 +70,7 @@ export class UserService {
 
       if (!tenant.isSuccess) {
         return Result.error({
-          error: ['Tenant does not exist'],
+          error: [ErrorCode.TENANT_NOT_FOUND],
           errorCode: HttpStatus.BAD_REQUEST,
         });
       }
@@ -86,7 +85,7 @@ export class UserService {
       user = await this.userRepository.save(user);
       return successResult(Result, user);
     } catch (e) {
-      return failResult(Result, e.toString());
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
@@ -116,7 +115,7 @@ export class UserService {
       const deleteRes = await this.userRepository.delete({ id: id });
       if ((deleteRes.affected ?? 0) <= 0) {
         return Result.error({
-          error: 'Unable to delete user',
+          error: ErrorCode.USER_DELETE_FAILED,
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
@@ -144,10 +143,10 @@ export class UserService {
         where: { name, tenant: { id: tenantId } },
         relations: ['role', 'tenant'],
       });
-      if (!user) return failResult(Result, 'User not found');
+      if (!user) return failResult(Result, ErrorCode.USER_NOT_FOUND);
       return successResult(Result, user);
     } catch (e) {
-      return failResult(Result, e.toString());
+      return failResult(Result, ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -155,10 +154,10 @@ export class UserService {
     const Result = createResultClass<User, string>();
     try {
       const user = await this.userRepository.findOne(conditions);
-      if (!user) return failResult(Result, 'User not found');
+      if (!user) return failResult(Result, ErrorCode.USER_NOT_FOUND);
       return successResult(Result, user);
     } catch (e) {
-      return failResult(Result, e.toString());
+      return failResult(Result, ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -166,10 +165,10 @@ export class UserService {
     const Result = createResultClass<User[], string>();
     try {
       const users = await this.userRepository.find(conditions);
-      if (!users) return failResult(Result, 'Users not found');
+      if (!users) return failResult(Result, ErrorCode.USER_NOT_FOUND);
       return successResult(Result, users);
     } catch (e) {
-      return failResult(Result, e.toString());
+      return failResult(Result, ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -182,13 +181,13 @@ export class UserService {
       });
 
       if (!user) {
-        return Result.error({ errorCode: HttpStatus.NOT_FOUND, error: ['Unable to find user'] });
+        return Result.error({ errorCode: HttpStatus.NOT_FOUND, error: [ErrorCode.USER_NOT_FOUND] });
       }
 
       const updateRes = await this.userRepository.update({ id }, { last_login_at: new Date() });
       if ((updateRes.affected ?? 0) <= 0) {
         return Result.error({
-          error: ['Unable to update user last_login_at'],
+          error: [ErrorCode.USER_UPDATE_FAILED],
           errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
         });
       }
