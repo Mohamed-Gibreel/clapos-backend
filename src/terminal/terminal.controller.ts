@@ -13,6 +13,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiTenantHeader } from 'src/utils/decorators/tenant-header.decorator';
 import { Role, Roles } from 'src/utils/decorators/roles.decorator';
 import { TerminalService } from './terminal.service';
+import { EventService } from 'src/event/event.service';
 import { CreateTerminalDTO } from './dto/create-terminal.dto';
 import { UpdateTerminalDTO } from './dto/update-terminal.dto';
 
@@ -21,7 +22,10 @@ import { UpdateTerminalDTO } from './dto/update-terminal.dto';
 @Controller('terminals')
 @Role([Roles.Manager, Roles.Owner])
 export class TerminalController {
-  constructor(private readonly terminalService: TerminalService) {}
+  constructor(
+    private readonly terminalService: TerminalService,
+    private readonly eventService: EventService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateTerminalDTO) {
@@ -46,5 +50,10 @@ export class TerminalController {
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.terminalService.remove(id);
+  }
+
+  @Get(':id/events')
+  getEvents(@Param('id', ParseUUIDPipe) id: string) {
+    return this.eventService.getEventsForTerminal(id);
   }
 }
