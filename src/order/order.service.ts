@@ -11,6 +11,7 @@ import { ProductService } from 'src/product/product.service';
 import { CustomerService } from 'src/customer/customer.service';
 import { TerminalService } from 'src/terminal/terminal.service';
 import { UserService } from 'src/user/user.service';
+import { TaxConfigService } from 'src/tax-config/tax-config.service';
 
 import { Customer } from 'src/customer/entities/customer.entity';
 import { PosTerminal } from 'src/terminal/entities/terminal.entity';
@@ -30,6 +31,7 @@ export class OrderService {
     private readonly customerService: CustomerService,
     private readonly terminalService: TerminalService,
     private readonly userService: UserService,
+    private readonly taxConfigService: TaxConfigService,
   ) {}
 
   async create(dto: CreateOrderDTO, cashierId: string) {
@@ -194,8 +196,11 @@ export class OrderService {
     } else if (discountType === DiscountType.Amount) {
       discountAmount = discountValue;
     }
-    const tax = 0; // Phase 2: apply TaxConfig
-    const total = Math.max(0, subtotal - discountAmount + tax);
+    const taxableAmount = Math.max(0, subtotal - discountAmount);
+    const taxConfigRes = await this.taxConfigService.getActive();
+    const taxRate = taxConfigRes.isSuccess && taxConfigRes.value ? Number(taxConfigRes.value.rate) : 0;
+    const tax = taxableAmount * taxRate;
+    const total = taxableAmount + tax;
     const change = Math.max(0, v.amountPaid - total);
 
     const order = this.orderRepo.create();
