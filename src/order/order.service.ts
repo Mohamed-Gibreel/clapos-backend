@@ -32,7 +32,7 @@ export class OrderService {
     private readonly userService: UserService,
   ) {}
 
-  async create(dto: CreateOrderDTO, cashierId: number) {
+  async create(dto: CreateOrderDTO, cashierId: string) {
     const Result = createResultClass<Order, string[]>();
     try {
       const isValid = convertToInstance(CreateOrderDTO, dto);
@@ -53,7 +53,7 @@ export class OrderService {
     }
   }
 
-  async syncOrders(dto: SyncOrdersDTO, cashierId: number) {
+  async syncOrders(dto: SyncOrdersDTO, cashierId: string) {
     type SyncResult = { clientId: string; serverId: string | null; orderNumber: string | null; status: string; error?: string };
     const Result = createResultClass<{ results: SyncResult[] }, string[]>();
     const results: SyncResult[] = [];
@@ -110,7 +110,7 @@ export class OrderService {
     return this.updateStatus(id, OrderStatus.Cancelled);
   }
 
-  private async buildAndSaveOrder(v: CreateOrderDTO, clientId: string, cashierId: number, isOffline: boolean) {
+  private async buildAndSaveOrder(v: CreateOrderDTO, clientId: string, cashierId: string, isOffline: boolean) {
     const Result = createResultClass<Order, string[]>();
 
     // Resolve cashier

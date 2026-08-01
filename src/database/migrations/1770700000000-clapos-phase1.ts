@@ -184,7 +184,7 @@ export class ClaposPhase11770700000000 implements MigrationInterface {
         "tenantId" uuid,
         "terminalId" uuid,
         "customerId" uuid,
-        "cashierId" integer,
+        "cashierId" uuid,
         CONSTRAINT "UQ_order_clientId" UNIQUE ("clientId"),
         CONSTRAINT "UQ_order_orderNumber" UNIQUE ("orderNumber"),
         CONSTRAINT "PK_order" PRIMARY KEY ("id")

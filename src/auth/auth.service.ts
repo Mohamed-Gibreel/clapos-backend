@@ -107,7 +107,7 @@ export class AuthService {
   }
 
   decodeToken(token: string) {
-    const Result = createResultClass<{ username: string; sub: number }, string>();
+    const Result = createResultClass<{ username: string; sub: string }, string>();
     try {
       const value = this.jwtService.decode(token);
       if (value == null) {

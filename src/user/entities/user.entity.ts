@@ -18,8 +18,8 @@ import { Tenant } from 'src/tenant/entities/tenant.entity';
 @Expose()
 @Unique(['emailAddress', 'tenant']) // email must be unique per tenant, not globally
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   emailAddress: string;

@@ -2,11 +2,9 @@ import { CreateUserDTO } from './create-user.dto';
 import { PartialType } from '@nestjs/mapped-types';
 import {
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
-  Min,
 } from 'class-validator';
 
 export class UpdateUserDTO extends PartialType(CreateUserDTO) {
@@ -15,10 +13,9 @@ export class UpdateUserDTO extends PartialType(CreateUserDTO) {
   @IsOptional()
   name?: string | undefined;
 
-  @Min(1)
-  @IsNumber()
+  @IsUUID()
   @IsOptional()
-  roleId?: number | undefined;
+  roleId?: string | undefined;
 
   @IsUUID()
   @IsOptional()

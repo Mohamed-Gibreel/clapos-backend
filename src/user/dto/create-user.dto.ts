@@ -1,11 +1,9 @@
 import {
   IsEmail,
   IsNotEmpty,
-  IsNumber,
   IsString,
   IsStrongPassword,
   IsUUID,
-  Min,
 } from 'class-validator';
 
 import { User } from '../entities/user.entity';
@@ -21,9 +19,8 @@ export class CreateUserDTO
   @IsNotEmpty()
   name: string;
 
-  @Min(1)
-  @IsNumber()
-  roleId: number;
+  @IsUUID()
+  roleId: string;
 
   @IsUUID()
   @IsNotEmpty()

@@ -28,12 +28,12 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
-  create(@Body() dto: CreateOrderDTO, @UserId() cashierId: number) {
+  create(@Body() dto: CreateOrderDTO, @UserId() cashierId: string) {
     return this.orderService.create(dto, cashierId);
   }
 
   @Post('sync')
-  syncOrders(@Body() dto: SyncOrdersDTO, @UserId() cashierId: number) {
+  syncOrders(@Body() dto: SyncOrdersDTO, @UserId() cashierId: string) {
     return this.orderService.syncOrders(dto, cashierId);
   }
 

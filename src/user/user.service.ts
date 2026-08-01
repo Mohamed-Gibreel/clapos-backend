@@ -104,7 +104,7 @@ export class UserService {
     }
   }
 
-  async deleteUserById(id: number) {
+  async deleteUserById(id: string) {
     const Result = createResultClass<string, string>();
     try {
       const user = await this.findOne({ where: { id: id } });
@@ -172,7 +172,7 @@ export class UserService {
     }
   }
 
-  async login(id: number) {
+  async login(id: string) {
     const Result = createResultClass<User, string[]>();
     try {
       const user = await this.userRepository.findOne({

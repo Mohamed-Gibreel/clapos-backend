@@ -50,7 +50,7 @@ export class RoleService {
     }
   }
 
-  async getById(id: number) {
+  async getById(id: string) {
     const Result = createResultClass<Role, string[]>();
     try {
       const role = await this.findOne({
@@ -74,7 +74,7 @@ export class RoleService {
     }
   }
 
-  async update(id: number, updateRoleDto: UpdateRoleDTO) {
+  async update(id: string, updateRoleDto: UpdateRoleDTO) {
     const Result = createResultClass<Role, string[]>();
     try {
       const isBodyValid = convertToInstance(UpdateRoleDTO, updateRoleDto);
@@ -123,7 +123,7 @@ export class RoleService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const Result = createResultClass<string, string[]>();
     try {
       const existingRole = await this.findOne({

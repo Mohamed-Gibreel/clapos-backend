@@ -1,6 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import { User } from '../entities/user.entity';
-import { IsEmail, IsNumber, IsObject, IsString } from 'class-validator';
+import { IsEmail, IsObject, IsString, IsUUID } from 'class-validator';
 import { Role } from 'src/role/entities/role.entity';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 
@@ -12,8 +12,8 @@ export class SafeUserDTO
       'password' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'last_login_at'
     >
 {
-  @IsNumber()
-  id: number;
+  @IsUUID()
+  id: string;
 
   @IsEmail()
   emailAddress: string;
