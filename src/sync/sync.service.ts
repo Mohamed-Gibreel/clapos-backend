@@ -9,6 +9,8 @@ import { ErrorCode } from 'src/utils/error-codes';
 import { Product } from 'src/product/entities/product.entity';
 import { Category } from 'src/category/entities/category.entity';
 import { Customer } from 'src/customer/entities/customer.entity';
+import { TaxConfig } from 'src/tax-config/entities/tax-config.entity';
+import { FeatureFlag } from 'src/feature-flag/entities/feature-flag.entity';
 
 import { SyncCustomersDTO } from './dto/sync-customers.dto';
 
@@ -21,6 +23,10 @@ export class SyncService {
     private readonly categoryRepo: TenantScopedRepository<Category>,
     @TenantRepository(Customer)
     private readonly customerRepo: TenantScopedRepository<Customer>,
+    @TenantRepository(TaxConfig)
+    private readonly taxConfigRepo: TenantScopedRepository<TaxConfig>,
+    @TenantRepository(FeatureFlag)
+    private readonly featureFlagRepo: TenantScopedRepository<FeatureFlag>,
   ) {}
 
   async getCatalog(updatedAfter?: string) {
@@ -31,13 +37,16 @@ export class SyncService {
       const { liveProducts, deletedProductIds } = await this.fetchProducts(since);
       const { liveCategories, deletedCategoryIds } = await this.fetchCategories(since);
 
+      const activeTaxConfig = await this.taxConfigRepo.findOne({ where: { isActive: true } });
+      const featureFlags = await this.fetchFeatureFlags();
+
       return Result.success({
         products: liveProducts,
         deletedProductIds,
         categories: liveCategories,
         deletedCategoryIds,
-        taxConfig: null,    // Phase 2
-        featureFlags: null, // Phase 2
+        taxConfig: activeTaxConfig ?? null,
+        featureFlags,
         syncedAt: new Date().toISOString(),
       });
     } catch (error) {
@@ -133,5 +142,13 @@ export class SyncService {
     }
 
     return { liveCategories, deletedCategoryIds };
+  }
+
+  private async fetchFeatureFlags(): Promise<Record<string, boolean>> {
+    const flags = await this.featureFlagRepo.find({});
+    return flags.reduce<Record<string, boolean>>((acc, f) => {
+      acc[f.key] = f.enabled;
+      return acc;
+    }, {});
   }
 }

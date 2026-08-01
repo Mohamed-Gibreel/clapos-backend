@@ -1,4 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { createResultClass } from 'src/utils/result';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
@@ -7,6 +9,7 @@ import { ErrorCode } from 'src/utils/error-codes';
 import { Order, OrderStatus } from 'src/order/entities/order.entity';
 import { Customer } from 'src/customer/entities/customer.entity';
 import { Product } from 'src/product/entities/product.entity';
+import { TerminalEvent } from 'src/event/entities/terminal-event.entity';
 
 @Injectable()
 export class ReportsService {
@@ -17,19 +20,22 @@ export class ReportsService {
     private readonly customerRepo: TenantScopedRepository<Customer>,
     @TenantRepository(Product)
     private readonly productRepo: TenantScopedRepository<Product>,
+    @InjectRepository(TerminalEvent)
+    private readonly terminalEventRepo: Repository<TerminalEvent>,
     private readonly tenantContext: TenantContextService,
   ) {}
 
-  async getSummary(query: {
-    from?: string;
-    to?: string;
-    terminalId?: string;
-  }) {
+  async getSummary(query: { from?: string; to?: string; terminalId?: string; eventId?: string }) {
     const Result = createResultClass<any, string[]>();
     try {
       const tenantId = this.tenantContext.getTenantId();
       const from = query.from ? new Date(query.from) : this.startOfDay(new Date());
       const to = query.to ? new Date(query.to) : new Date();
+
+      const terminalIds = await this.resolveTerminalIds(query.terminalId, query.eventId, tenantId);
+      if (terminalIds !== null && terminalIds.length === 0) {
+        return Result.success(this.emptySummary(from, to));
+      }
 
       const orderQb = this.orderRepo
         .createQueryBuilder('order')
@@ -39,23 +45,20 @@ export class ReportsService {
         .andWhere('order.status != :cancelled', { cancelled: OrderStatus.Cancelled })
         .andWhere('order.clientCreatedAt BETWEEN :from AND :to', { from, to });
 
-      if (query.terminalId) {
-        orderQb.andWhere('order.terminal = :terminalId', { terminalId: query.terminalId });
+      if (terminalIds !== null) {
+        orderQb.andWhere('order.terminalId IN (:...terminalIds)', { terminalIds });
       }
 
       const orders = await orderQb.getMany();
-
       const totalOrders = orders.length;
       const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      // Customer counts
       const customerQb = this.customerRepo
         .createQueryBuilder('customer')
         .innerJoin('customer.tenant', 'ctenant')
         .where('ctenant.id = :tenantId', { tenantId })
         .andWhere('customer.deletedAt IS NULL');
-
       const totalCustomers = await customerQb.getCount();
 
       const newCustomersQb = this.customerRepo
@@ -64,10 +67,8 @@ export class ReportsService {
         .where('ctenant2.id = :tenantId', { tenantId })
         .andWhere('customer.deletedAt IS NULL')
         .andWhere('customer.createdAt BETWEEN :from AND :to', { from, to });
-
       const newCustomers = await newCustomersQb.getCount();
 
-      // Payment method breakdown
       const cashOrders = orders.filter((o) => o.paymentMethod === 'cash');
       const cardOrders = orders.filter((o) => o.paymentMethod === 'card');
 
@@ -88,18 +89,16 @@ export class ReportsService {
     }
   }
 
-  async getSales(query: {
-    from?: string;
-    to?: string;
-    groupBy?: 'day' | 'week' | 'month';
-    terminalId?: string;
-  }) {
+  async getSales(query: { from?: string; to?: string; groupBy?: 'day' | 'week' | 'month'; terminalId?: string; eventId?: string }) {
     const Result = createResultClass<any[], string[]>();
     try {
       const tenantId = this.tenantContext.getTenantId();
       const from = query.from ? new Date(query.from) : this.startOfDay(new Date());
       const to = query.to ? new Date(query.to) : new Date();
       const groupBy = query.groupBy ?? 'day';
+
+      const terminalIds = await this.resolveTerminalIds(query.terminalId, query.eventId, tenantId);
+      if (terminalIds !== null && terminalIds.length === 0) return Result.success([]);
 
       const qb = this.orderRepo
         .createQueryBuilder('order')
@@ -114,35 +113,31 @@ export class ReportsService {
         .groupBy(`DATE_TRUNC('${groupBy}', order.clientCreatedAt)`)
         .orderBy('period', 'ASC');
 
-      if (query.terminalId) {
-        qb.andWhere('order.terminal = :terminalId', { terminalId: query.terminalId });
+      if (terminalIds !== null) {
+        qb.andWhere('order.terminalId IN (:...terminalIds)', { terminalIds });
       }
 
       const rows = await qb.getRawMany();
-      const data = rows.map((r) => ({
+      return Result.success(rows.map((r) => ({
         period: r.period,
         totalOrders: parseInt(r.totalOrders, 10),
         totalRevenue: Number(Number(r.totalRevenue).toFixed(2)),
-      }));
-
-      return Result.success(data);
+      })));
     } catch (error) {
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
-  async getTopProducts(query: {
-    from?: string;
-    to?: string;
-    limit?: number;
-    terminalId?: string;
-  }) {
+  async getTopProducts(query: { from?: string; to?: string; limit?: number; terminalId?: string; eventId?: string }) {
     const Result = createResultClass<any[], string[]>();
     try {
       const tenantId = this.tenantContext.getTenantId();
       const from = query.from ? new Date(query.from) : this.startOfDay(new Date());
       const to = query.to ? new Date(query.to) : new Date();
       const limit = Math.min(query.limit ?? 10, 50);
+
+      const terminalIds = await this.resolveTerminalIds(query.terminalId, query.eventId, tenantId);
+      if (terminalIds !== null && terminalIds.length === 0) return Result.success([]);
 
       const qb = this.orderRepo
         .createQueryBuilder('order')
@@ -162,19 +157,17 @@ export class ReportsService {
         .orderBy('"quantitySold"', 'DESC')
         .limit(limit);
 
-      if (query.terminalId) {
-        qb.andWhere('order.terminal = :terminalId', { terminalId: query.terminalId });
+      if (terminalIds !== null) {
+        qb.andWhere('order.terminalId IN (:...terminalIds)', { terminalIds });
       }
 
       const rows = await qb.getRawMany();
-      const data = rows.map((r) => ({
+      return Result.success(rows.map((r) => ({
         productId: r.productId,
         name: r.name,
         quantitySold: parseInt(r.quantitySold, 10),
         totalRevenue: Number(Number(r.totalRevenue).toFixed(2)),
-      }));
-
-      return Result.success(data);
+      })));
     } catch (error) {
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
@@ -196,9 +189,7 @@ export class ReportsService {
         .getRawMany();
 
       const counts: Record<string, number> = { active: 0, inactive: 0, draft: 0 };
-      for (const row of rows) {
-        counts[row.status] = parseInt(row.count, 10);
-      }
+      for (const row of rows) counts[row.status] = parseInt(row.count, 10);
 
       return Result.success(counts);
     } catch (error) {
@@ -206,11 +197,14 @@ export class ReportsService {
     }
   }
 
-  async getRecentOrders(query: { limit?: number; terminalId?: string }) {
+  async getRecentOrders(query: { limit?: number; terminalId?: string; eventId?: string }) {
     const Result = createResultClass<Order[], string[]>();
     try {
       const tenantId = this.tenantContext.getTenantId();
       const limit = Math.min(query.limit ?? 5, 50);
+
+      const terminalIds = await this.resolveTerminalIds(query.terminalId, query.eventId, tenantId);
+      if (terminalIds !== null && terminalIds.length === 0) return Result.success([]);
 
       const qb = this.orderRepo
         .createQueryBuilder('order')
@@ -223,15 +217,55 @@ export class ReportsService {
         .orderBy('order.clientCreatedAt', 'DESC')
         .take(limit);
 
-      if (query.terminalId) {
-        qb.andWhere('order.terminal = :terminalId', { terminalId: query.terminalId });
+      if (terminalIds !== null) {
+        qb.andWhere('order.terminalId IN (:...terminalIds)', { terminalIds });
       }
 
-      const orders = await qb.getMany();
-      return Result.success(orders);
+      return Result.success(await qb.getMany());
     } catch (error) {
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
+  }
+
+  /**
+   * Resolves a list of terminal IDs to scope report queries.
+   * - If both terminalId and eventId are null → returns null (no filter, show all)
+   * - If terminalId is set → returns [terminalId]
+   * - If eventId is set → returns all terminal IDs for that event scoped to this tenant
+   * - Returns [] if eventId has no terminals for this tenant (caller should return empty result)
+   */
+  private async resolveTerminalIds(
+    terminalId: string | undefined,
+    eventId: string | undefined,
+    tenantId: string,
+  ): Promise<string[] | null> {
+    if (terminalId) return [terminalId];
+
+    if (eventId) {
+      const rows = await this.terminalEventRepo
+        .createQueryBuilder('te')
+        .innerJoin('te.terminal', 'terminal')
+        .innerJoin('terminal.tenant', 'tenant')
+        .select('te.terminalId', 'terminalId')
+        .where('te.eventId = :eventId', { eventId })
+        .andWhere('tenant.id = :tenantId', { tenantId })
+        .getRawMany();
+      return rows.map((r) => r.terminalId);
+    }
+
+    return null;
+  }
+
+  private emptySummary(from: Date, to: Date) {
+    return {
+      totalOrders: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      totalCustomers: 0,
+      newCustomers: 0,
+      paymentBreakdown: { cash: { count: 0, revenue: 0 }, card: { count: 0, revenue: 0 } },
+      period: { from: from.toISOString(), to: to.toISOString() },
+    };
   }
 
   private startOfDay(date: Date): Date {

@@ -45,6 +45,9 @@ import { CustomerModule } from './customer/customer.module';
 import { OrderModule } from './order/order.module';
 import { SyncModule } from './sync/sync.module';
 import { ReportsModule } from './reports/reports.module';
+import { TaxConfigModule } from './tax-config/tax-config.module';
+import { FeatureFlagModule } from './feature-flag/feature-flag.module';
+import { DiscountModule } from './discount/discount.module';
 
 const typeormConfig: TypeOrmModuleAsyncOptions = {
   imports: [ConfigModule],
@@ -103,6 +106,9 @@ const bullmqConfig: SharedBullAsyncConfiguration = {
     OrderModule,
     SyncModule,
     ReportsModule,
+    TaxConfigModule,
+    FeatureFlagModule,
+    DiscountModule,
   ],
   controllers: [],
   providers: [
