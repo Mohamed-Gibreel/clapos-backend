@@ -36,18 +36,17 @@ export class UserController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    // TODO: Implement
-    return false;
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @TenantId() tenantId: string) {
+    return await this.userService.getById(id, tenantId);
   }
 
   @Patch(':id')
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDTO,
+    @TenantId() tenantId: string,
   ) {
-    // TODO: Implement
-    return false;
+    return await this.userService.update(id, updateUserDto, tenantId);
   }
 
   @Delete(':id')

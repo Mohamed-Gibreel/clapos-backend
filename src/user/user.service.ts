@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
+import { UpdateUserDTO } from './dto/update-user.dto';
 import { failResult, successResult, convertToInstance } from '../utils/dto-validator';
 import { createResultClass, ResultType } from '../utils/result';
 import { RoleService } from 'src/role/role.service';
@@ -101,6 +102,67 @@ export class UserService {
       return Result.success(users.value);
     } catch (e) {
       return Result.error({ error: e, errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
+  }
+
+  async getById(id: string, tenantId: string) {
+    const Result = createResultClass<User, string[]>();
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id, tenant: { id: tenantId } },
+        relations: ['role', 'tenant'],
+      });
+      if (!user) {
+        return Result.error({ error: [ErrorCode.USER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
+      }
+      return Result.success(user);
+    } catch (e) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
+  }
+
+  async update(id: string, dto: UpdateUserDTO, tenantId: string) {
+    const Result = createResultClass<User, string[]>();
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id, tenant: { id: tenantId } },
+        relations: ['role', 'tenant'],
+      });
+      if (!user) {
+        return Result.error({ error: [ErrorCode.USER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
+      }
+
+      if (dto.name) user.name = dto.name;
+
+      if (dto.emailAddress && dto.emailAddress !== user.emailAddress) {
+        const conflict = await this.userRepository.findOne({
+          where: { emailAddress: dto.emailAddress, tenant: { id: tenantId } },
+        });
+        if (conflict) {
+          return Result.error({ error: [ErrorCode.USER_ALREADY_EXISTS], errorCode: HttpStatus.CONFLICT });
+        }
+        user.emailAddress = dto.emailAddress;
+      }
+
+      if (dto.password) {
+        user.password = await bcrypt.hash(dto.password, 10);
+      }
+
+      if (dto.roleId) {
+        const role = await this.roleService.findOne({ where: { id: dto.roleId } });
+        if (!role.isSuccess) {
+          return Result.error({ error: [ErrorCode.ROLE_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
+        }
+        if (!this.allowedRoles.includes(role.value.name)) {
+          return Result.error({ error: [ErrorCode.INVALID_ROLE], errorCode: HttpStatus.BAD_REQUEST });
+        }
+        user.role = role.value;
+      }
+
+      const saved = await this.userRepository.save(user);
+      return Result.success(saved);
+    } catch (e) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
 
