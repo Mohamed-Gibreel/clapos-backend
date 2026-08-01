@@ -652,33 +652,34 @@ Implement role guards on NestJS routes using a `@Roles()` decorator + JWT guard.
 
 ## Phase Roadmap
 
-### Phase 1 — Core Transaction Loop (MVP)
+### Phase 1 — Core Transaction Loop (MVP) ✅
 These endpoints must exist before the app is usable as a POS:
 
 **Base-template fixes (do first):**
-- [ ] Bcrypt on user passwords
-- [ ] Tenant-scoped login (`POST /auth/login` requires `x-tenant-id`)
-- [ ] `UNIQUE(email, tenantId)` on users
-- [ ] Validate tenant UUID in middleware against DB
-- [ ] `UserService` uses tenant-scoped repository
+- [x] Bcrypt on user passwords
+- [x] Tenant-scoped login (`POST /auth/login` requires `x-tenant-id`)
+- [x] `UNIQUE(email, tenantId)` on users
+- [x] Validate tenant UUID in middleware against DB
+- [x] `UserService` uses tenant-scoped repository
 
 **ClaPos Phase 1:**
-- [ ] Tenant + POS Terminal setup (registration flow)
-- [ ] `GET /sync/catalog` (products + categories + variations — full and incremental)
-- [ ] `POST /orders` (online order creation with `clientId` idempotency)
-- [ ] `POST /sync/orders` (offline order batch upload)
-- [ ] `POST /sync/customers` (offline customer batch upload)
-- [ ] `POST /customers` (online customer creation)
-- [ ] `GET /orders` + `GET /orders/:id`
-- [ ] `GET /reports/summary`
+- [x] Tenant + POS Terminal setup (registration flow)
+- [x] `GET /sync/catalog` (products + categories + variations — full and incremental)
+- [x] `POST /orders` (online order creation with `clientId` idempotency)
+- [x] `POST /orders/sync` (offline order batch upload)
+- [x] `POST /sync/customers` (offline customer batch upload with duplicate-phone detection)
+- [x] `POST /customers` (online customer creation)
+- [x] `GET /orders` + `GET /orders/:id`
+- [x] `GET /reports/summary`
 
-### Phase 2 — Operations
-- [ ] `PATCH /orders/:id/status`
-- [ ] `POST /orders/:id/void` + `POST /orders/:id/refund`
+### Phase 2 — Operations (partially done)
+- [x] `PATCH /orders/:id/status`
+- [x] `POST /orders/:id/void` + `POST /orders/:id/refund`
+- [x] Full reports suite with `terminalId` filter (`/reports/sales`, `/reports/top-products`, `/reports/product-status`, `/reports/recent-orders`)
 - [ ] Tax config endpoints
 - [ ] Feature flags endpoint
 - [ ] Discount/voucher endpoints
-- [ ] Full reports suite with `terminalId` / `eventId` filters
+- [ ] `eventId` filter on reports
 
 ### Phase 3 — Growth Features
 - [ ] Events + TerminalEvent assignments
