@@ -16,6 +16,9 @@ export class FeatureFlag extends BaseEntity {
   @Column({ nullable: true })
   description?: string;
 
+  @Column({ nullable: true })
+  tenantId: string;
+
   @JoinColumn()
   @ManyToOne(() => Tenant)
   tenant: Tenant;
