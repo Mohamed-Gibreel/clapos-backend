@@ -3,12 +3,13 @@ import { TenantEntityModule } from 'src/tenant/tenant-entity.module';
 import { TenantModule } from 'src/tenant/tenant.module';
 import { Order } from 'src/order/entities/order.entity';
 import { Customer } from 'src/customer/entities/customer.entity';
+import { Product } from 'src/product/entities/product.entity';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 
 @Module({
   imports: [
-    TenantEntityModule.forFeature([Order, Customer]),
+    TenantEntityModule.forFeature([Order, Customer, Product]),
     TenantModule,
   ],
   controllers: [ReportsController],

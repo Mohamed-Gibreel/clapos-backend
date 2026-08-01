@@ -28,43 +28,30 @@ export class SeedService implements OnApplicationBootstrap {
     }
 
     // 2. Create Roles
-    let role = await this.roleRepo.findOne({
-      where: { name: Roles.SuperAdmin },
-    });
-    if (!role) {
-      role = await this.roleRepo.save({ name: Roles.SuperAdmin });
-      this.logger.log('[SeedService] - Created SuperAdmin role successfully');
+    const roleNames = [Roles.SuperAdmin, Roles.Owner, Roles.Manager, Roles.Cashier];
+    for (const name of roleNames) {
+      const exists = await this.roleRepo.findOne({ where: { name } });
+      if (!exists) {
+        await this.roleRepo.save({ name });
+        this.logger.log(`[SeedService] - Created role: ${name}`);
+      }
     }
 
-    let adminRole = await this.roleRepo.findOne({
-      where: { name: Roles.Admin },
-    });
-    if (!adminRole) {
-      adminRole = await this.roleRepo.save({ name: Roles.Admin });
-      this.logger.log('[SeedService] - Created Admin role successfully');
-    }
-
-    let userRole = await this.roleRepo.findOne({
-      where: { name: Roles.User },
-    });
-    if (!userRole) {
-      userRole = await this.roleRepo.save({ name: Roles.User });
-      this.logger.log('[SeedService] - Created User role successfully');
-    }
+    const superAdminRole = await this.roleRepo.findOne({ where: { name: Roles.SuperAdmin } });
+    if (!superAdminRole) return;
 
     // 3. Create SuperAdmin User
     const adminEmail = 'user@example.com';
-    let user = await this.userRepo.findOne({
+    const existingUser = await this.userRepo.findOne({
       where: { emailAddress: adminEmail },
     });
-    if (!user) {
-      user = this.userRepo.create({
-        role: role,
-        name: 'superadmin',
-        tenant: tenant,
-        password: await bcrypt.hash('admin123', 10),
-        emailAddress: adminEmail,
-      });
+    if (!existingUser) {
+      const user = this.userRepo.create();
+      user.role = superAdminRole;
+      user.name = 'superadmin';
+      user.tenant = tenant;
+      user.password = await bcrypt.hash('admin123', 10);
+      user.emailAddress = adminEmail;
       await this.userRepo.save(user);
       this.logger.log('[SeedService] - ✅ Created super admin successfully');
     }

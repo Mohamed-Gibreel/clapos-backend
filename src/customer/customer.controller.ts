@@ -20,7 +20,7 @@ import { UpdateCustomerDTO } from './dto/update-customer.dto';
 @ApiBearerAuth()
 @ApiTenantHeader()
 @Controller('customers')
-@Role([Roles.Admin, Roles.User])
+@Role([Roles.Cashier, Roles.Manager, Roles.Owner])
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
@@ -55,7 +55,7 @@ export class CustomerController {
   }
 
   @Delete(':id')
-  @Role([Roles.Admin])
+  @Role([Roles.Manager, Roles.Owner])
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.customerService.remove(id);
   }

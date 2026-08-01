@@ -19,7 +19,7 @@ import { UpdateTerminalDTO } from './dto/update-terminal.dto';
 @ApiBearerAuth()
 @ApiTenantHeader()
 @Controller('terminals')
-@Role([Roles.Admin])
+@Role([Roles.Manager, Roles.Owner])
 export class TerminalController {
   constructor(private readonly terminalService: TerminalService) {}
 

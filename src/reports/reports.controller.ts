@@ -8,7 +8,7 @@ import { ReportsService } from './reports.service';
 @ApiBearerAuth()
 @ApiTenantHeader()
 @Controller('reports')
-@Role([Roles.Admin, Roles.User])
+@Role([Roles.Manager, Roles.Owner])
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
@@ -19,6 +19,36 @@ export class ReportsController {
     @Query('terminalId') terminalId?: string,
   ) {
     return this.reportsService.getSummary({ from, to, terminalId });
+  }
+
+  @Get('sales')
+  getSales(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('groupBy') groupBy?: 'day' | 'week' | 'month',
+    @Query('terminalId') terminalId?: string,
+  ) {
+    return this.reportsService.getSales({ from, to, groupBy, terminalId });
+  }
+
+  @Get('top-products')
+  getTopProducts(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('limit') limit?: string,
+    @Query('terminalId') terminalId?: string,
+  ) {
+    return this.reportsService.getTopProducts({
+      from,
+      to,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      terminalId,
+    });
+  }
+
+  @Get('product-status')
+  getProductStatus() {
+    return this.reportsService.getProductStatus();
   }
 
   @Get('recent-orders')

@@ -18,7 +18,7 @@ import { Role, Roles } from 'src/utils/decorators/roles.decorator';
 @ApiBearerAuth()
 @ApiTenantHeader()
 @Controller('project')
-@Role([Roles.Admin])
+@Role([Roles.Owner])
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 

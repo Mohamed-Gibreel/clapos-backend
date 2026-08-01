@@ -2,8 +2,11 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -15,11 +18,12 @@ import { UserId } from 'src/utils/decorators/user.decorator';
 import { OrderService } from './order.service';
 import { CreateOrderDTO } from './dto/create-order.dto';
 import { SyncOrdersDTO } from './dto/sync-orders.dto';
+import { UpdateOrderStatusDTO } from './dto/update-order-status.dto';
 
 @ApiBearerAuth()
 @ApiTenantHeader()
 @Controller('orders')
-@Role([Roles.Admin, Roles.User])
+@Role([Roles.Cashier, Roles.Manager, Roles.Owner])
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
@@ -57,5 +61,25 @@ export class OrderController {
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.orderService.getById(id);
+  }
+
+  @Patch(':id/status')
+  @Role([Roles.Manager, Roles.Owner])
+  updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateOrderStatusDTO) {
+    return this.orderService.updateStatus(id, dto.status);
+  }
+
+  @Post(':id/void')
+  @HttpCode(HttpStatus.OK)
+  @Role([Roles.Manager, Roles.Owner])
+  void(@Param('id', ParseUUIDPipe) id: string) {
+    return this.orderService.void(id);
+  }
+
+  @Post(':id/refund')
+  @HttpCode(HttpStatus.OK)
+  @Role([Roles.Manager, Roles.Owner])
+  refund(@Param('id', ParseUUIDPipe) id: string) {
+    return this.orderService.refund(id);
   }
 }

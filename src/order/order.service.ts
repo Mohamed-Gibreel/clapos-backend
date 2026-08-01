@@ -87,6 +87,29 @@ export class OrderService {
     return Result.success({ results });
   }
 
+  async updateStatus(id: string, status: OrderStatus) {
+    const Result = createResultClass<Order, string[]>();
+    try {
+      const order = await this.orderRepo.findOne({ where: { id } });
+      if (!order) {
+        return Result.error({ error: [ErrorCode.ORDER_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
+      }
+      await this.orderRepo.update({ id }, { status });
+      order.status = status;
+      return Result.success(order);
+    } catch (error) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
+  }
+
+  async void(id: string) {
+    return this.updateStatus(id, OrderStatus.Cancelled);
+  }
+
+  async refund(id: string) {
+    return this.updateStatus(id, OrderStatus.Cancelled);
+  }
+
   private async buildAndSaveOrder(v: CreateOrderDTO, clientId: string, cashierId: number, isOffline: boolean) {
     const Result = createResultClass<Order, string[]>();
 

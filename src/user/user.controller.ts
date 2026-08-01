@@ -21,7 +21,7 @@ import { TenantId } from 'src/utils/decorators/tenant.decorator';
 @ApiBearerAuth()
 @ApiTenantHeader()
 @Controller('user')
-@Role([Roles.Admin])
+@Role([Roles.Manager, Roles.Owner])
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

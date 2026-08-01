@@ -14,7 +14,7 @@ import { ErrorCode } from 'src/utils/error-codes';
 
 @Injectable()
 export class UserService {
-  allowedRoles = [Roles.Admin, Roles.User];
+  allowedRoles = [Roles.Owner, Roles.Manager, Roles.Cashier];
 
   constructor(
     @InjectRepository(User)

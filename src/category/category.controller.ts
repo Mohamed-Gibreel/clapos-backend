@@ -23,31 +23,31 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
-  @Role([Roles.Admin])
+  @Role([Roles.Manager, Roles.Owner])
   create(@Body() dto: CreateCategoryDTO) {
     return this.categoryService.create(dto);
   }
 
   @Get()
-  @Role([Roles.Admin, Roles.User])
+  @Role([Roles.Cashier, Roles.Manager, Roles.Owner])
   findAll() {
     return this.categoryService.getAll();
   }
 
   @Get(':id')
-  @Role([Roles.Admin, Roles.User])
+  @Role([Roles.Cashier, Roles.Manager, Roles.Owner])
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.categoryService.getById(id);
   }
 
   @Patch(':id')
-  @Role([Roles.Admin])
+  @Role([Roles.Manager, Roles.Owner])
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCategoryDTO) {
     return this.categoryService.update(id, dto);
   }
 
   @Delete(':id')
-  @Role([Roles.Admin])
+  @Role([Roles.Manager, Roles.Owner])
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.categoryService.remove(id);
   }
