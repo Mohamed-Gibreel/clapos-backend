@@ -25,9 +25,19 @@ const createTenantScopedRepository = <T extends ObjectLiteral>(
     },
 
     async saveWithTenant(entity: Partial<T>): Promise<T> {
+      // Most tenant-scoped entities only declare `@ManyToOne(() => Tenant) tenant`
+      // (no plain `tenantId` column TypeORM can bind a flat property to), so
+      // setting `tenantId` alone left the join column NULL on every create —
+      // new rows silently vanished from every tenant-scoped list (`find`/
+      // `findOne` above filter via the `tenant: { id }` relation, which is why
+      // reads looked fine while writes were broken). Setting the relation
+      // itself is what TypeORM needs to populate the join column. `tenantId`
+      // is kept too for the entities (e.g. `FeatureFlag`) that also declare an
+      // explicit `tenantId` column alongside the relation.
       const withTenant = {
         ...entity,
         tenantId: this.tenantId,
+        tenant: { id: this.tenantId },
       } as unknown as DeepPartial<T>;
 
       return baseRepo.save(withTenant);

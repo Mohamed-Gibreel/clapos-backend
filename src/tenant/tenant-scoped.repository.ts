@@ -27,9 +27,17 @@ export abstract class TenantScopedRepository<
   }
 
   async saveWithTenant(entity: Partial<T>): Promise<T> {
+    // Most tenant-scoped entities only declare `@ManyToOne(() => Tenant) tenant`
+    // (no plain `tenantId` column TypeORM can bind a flat property to), so
+    // setting `tenantId` alone left the join column NULL on every create —
+    // new rows silently vanished from every tenant-scoped list. Setting the
+    // relation itself is what TypeORM needs to populate the join column.
+    // `tenantId` is kept too for the handful of entities (e.g. `FeatureFlag`)
+    // that also declare an explicit `tenantId` column alongside the relation.
     const withTenant = {
       ...entity,
       tenantId: this.tenantId,
+      tenant: { id: this.tenantId },
     } as unknown as DeepPartial<T>;
 
     return super.save(withTenant);

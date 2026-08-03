@@ -15,11 +15,17 @@ async function bootstrap() {
 }
 
 const registerGlobals = (app: INestApplication) => {
-  app.useGlobalInterceptors(
-    new ClassSerializerInterceptor(app.get(Reflector), {
-      strategy: 'excludeAll',
-    }),
-  );
+  // `strategy: 'excludeAll'` requires every serialized property to opt in with
+  // `@Expose()`. Most entities only carry a class-level `@Expose()` (which does
+  // not reach nested/nameless response wrappers like `ApiResponseDto<T>`'s
+  // generic `data` field), so responses were silently losing fields — plain
+  // aggregate objects (reports) came back as `{}`, and relations like
+  // `User.role`/`User.tenant` were dropped from list responses. The default
+  // strategy exposes everything except what's explicitly `@Exclude()`d (e.g.
+  // `User.createdAt/updatedAt/deletedAt`) or gated behind `@Expose({ groups })`
+  // (e.g. `User.password`, which stays hidden since no group is ever passed
+  // here) — so this does not expose anything that was deliberately hidden.
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());

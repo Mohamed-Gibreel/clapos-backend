@@ -95,6 +95,7 @@ export class UserService {
     try {
       const users = await this.find({
         where: { tenant: { id: tenantId } },
+        relations: ['role', 'tenant'],
       });
       if (!users.isSuccess) {
         return Result.error({ error: [users.error], errorCode: users.errorCode });
