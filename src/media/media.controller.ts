@@ -67,6 +67,13 @@ export class MediaController {
     return this.mediaService.uploadGlobal(file);
   }
 
+  // Everything the caller's tenant uploaded, plus every global file.
+  @Get()
+  @Role([Roles.Cashier, Roles.Manager, Roles.Owner])
+  findAll() {
+    return this.mediaService.list();
+  }
+
   @Get(':id')
   @Role([Roles.Cashier, Roles.Manager, Roles.Owner])
   findOne(@Param('id', ParseUUIDPipe) id: string) {

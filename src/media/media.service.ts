@@ -76,6 +76,25 @@ export class MediaService implements OnModuleInit {
     }
   }
 
+  // Everything owned by the caller's tenant, plus every global file.
+  async list() {
+    const Result = createResultClass<Media[], string[]>();
+    try {
+      const tenantId = this.tenantContext.getTenantId();
+      const media = await this.mediaRepo.find({
+        where: [{ tenant: { id: tenantId } }, { tenant: IsNull() }],
+        relations: ['tenant'],
+        order: { createdAt: 'DESC' },
+      });
+      return Result.success(media);
+    } catch {
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
   // Visible if it's owned by the caller's tenant, or global (no owning tenant).
   async getById(id: string) {
     const Result = createResultClass<Media, string[]>();
@@ -86,6 +105,7 @@ export class MediaService implements OnModuleInit {
           { id, tenant: { id: tenantId } },
           { id, tenant: IsNull() },
         ],
+        relations: ['tenant'],
       });
       if (!media) {
         return Result.error({

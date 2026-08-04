@@ -75,9 +75,9 @@ export class CreateProductDTO {
   @Min(0)
   price: number;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  imageUrl?: string;
+  imageId?: string;
 
   @IsEnum(ProductStatus)
   @IsOptional()

@@ -48,9 +48,9 @@ export class UpdateProductDTO {
   @IsOptional()
   price?: number;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  imageUrl?: string;
+  imageId?: string;
 
   @IsEnum(ProductStatus)
   @IsOptional()

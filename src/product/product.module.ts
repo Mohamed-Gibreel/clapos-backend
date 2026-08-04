@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TenantEntityModule } from 'src/tenant/tenant-entity.module';
 import { TenantModule } from 'src/tenant/tenant.module';
 import { CategoryModule } from 'src/category/category.module';
+import { MediaModule } from 'src/media/media.module';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { Product } from './entities/product.entity';
@@ -15,6 +16,7 @@ import { VariationOption } from './entities/variation-option.entity';
     TypeOrmModule.forFeature([VariationGroup, VariationOption]),
     TenantModule,
     CategoryModule,
+    MediaModule,
   ],
   controllers: [ProductController],
   providers: [ProductService],
