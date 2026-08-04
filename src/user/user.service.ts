@@ -12,6 +12,7 @@ import { RoleService } from 'src/role/role.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { Roles } from 'src/utils/decorators/roles.decorator';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 @Injectable()
 export class UserService {
@@ -43,7 +44,7 @@ export class UserService {
       if (userAlreadyExists) {
         return Result.error({
           error: [ErrorCode.USER_ALREADY_EXISTS],
-          errorCode: HttpStatus.BAD_REQUEST,
+          errorCode: HttpStatus.CONFLICT,
         });
       }
 
@@ -86,6 +87,9 @@ export class UserService {
       user = await this.userRepository.save(user);
       return successResult(Result, user);
     } catch (e) {
+      if (isUniqueViolation(e)) {
+        return Result.error({ error: [ErrorCode.USER_ALREADY_EXISTS], errorCode: HttpStatus.CONFLICT });
+      }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }
@@ -163,6 +167,9 @@ export class UserService {
       const saved = await this.userRepository.save(user);
       return Result.success(saved);
     } catch (e) {
+      if (isUniqueViolation(e)) {
+        return Result.error({ error: [ErrorCode.USER_ALREADY_EXISTS], errorCode: HttpStatus.CONFLICT });
+      }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }

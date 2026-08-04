@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { createResultClass } from 'src/utils/result';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 import { Membership } from './entities/membership.entity';
 import { Customer } from './entities/customer.entity';
@@ -53,6 +54,11 @@ export class MembershipService {
 
       return Result.success(saved);
     } catch (error) {
+      // The findOne above is not atomic with the insert, so concurrent
+      // requests still land here on the one-membership-per-customer index.
+      if (isUniqueViolation(error)) {
+        return Result.error({ error: [ErrorCode.MEMBERSHIP_ALREADY_EXISTS], errorCode: HttpStatus.CONFLICT });
+      }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
   }

@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 @Injectable()
 export class RoleService {
@@ -30,6 +31,12 @@ export class RoleService {
       const savedRole = await this.rolesRepository.save(role);
       return Result.success(savedRole);
     } catch (error) {
+      if (isUniqueViolation(error)) {
+        return Result.error({
+          error: [ErrorCode.ROLE_NAME_CONFLICT],
+          errorCode: HttpStatus.CONFLICT,
+        });
+      }
       return Result.error({
         error: error,
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -116,6 +123,12 @@ export class RoleService {
       }
       return Result.success(updatedRole);
     } catch (error) {
+      if (isUniqueViolation(error)) {
+        return Result.error({
+          error: [ErrorCode.ROLE_NAME_CONFLICT],
+          errorCode: HttpStatus.CONFLICT,
+        });
+      }
       return Result.error({
         error: error,
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,

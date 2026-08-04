@@ -24,7 +24,10 @@ export class FeatureFlagService {
     try {
       const isValid = convertToInstance(CreateFeatureFlagDTO, dto);
       if (!isValid.isSuccess) {
-        return Result.error({ error: isValid.error, errorCode: HttpStatus.BAD_REQUEST });
+        return Result.error({
+          error: isValid.error,
+          errorCode: HttpStatus.BAD_REQUEST,
+        });
       }
 
       const flag = this.flagRepo.create();
@@ -36,9 +39,15 @@ export class FeatureFlagService {
       return Result.success(saved);
     } catch (error) {
       if (isUniqueViolation(error)) {
-        return Result.error({ error: [ErrorCode.FEATURE_FLAG_KEY_CONFLICT], errorCode: HttpStatus.CONFLICT });
+        return Result.error({
+          error: [ErrorCode.FEATURE_FLAG_KEY_CONFLICT],
+          errorCode: HttpStatus.CONFLICT,
+        });
       }
-      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -48,7 +57,10 @@ export class FeatureFlagService {
       const flags = await this.flagRepo.find({});
       return Result.success(flags);
     } catch (error) {
-      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -65,23 +77,41 @@ export class FeatureFlagService {
     try {
       const isValid = convertToInstance(UpdateFeatureFlagDTO, dto);
       if (!isValid.isSuccess) {
-        return Result.error({ error: isValid.error, errorCode: HttpStatus.BAD_REQUEST });
+        return Result.error({
+          error: isValid.error,
+          errorCode: HttpStatus.BAD_REQUEST,
+        });
       }
 
       const existing = await this.findOne({ where: { id } });
       if (!existing.isSuccess) {
-        return Result.error({ error: existing.error, errorCode: existing.errorCode });
+        return Result.error({
+          error: existing.error,
+          errorCode: existing.errorCode,
+        });
       }
 
       const merged = this.flagRepo.merge(existing.value, isValid.value);
       const updateRes = await this.flagRepo.update({ id }, merged);
 
       if ((updateRes.affected ?? 0) <= 0) {
-        return Result.error({ error: [ErrorCode.FEATURE_FLAG_UPDATE_FAILED], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
+        return Result.error({
+          error: [ErrorCode.FEATURE_FLAG_UPDATE_FAILED],
+          errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        });
       }
       return Result.success(merged);
     } catch (error) {
-      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      if (isUniqueViolation(error)) {
+        return Result.error({
+          error: [ErrorCode.FEATURE_FLAG_KEY_CONFLICT],
+          errorCode: HttpStatus.CONFLICT,
+        });
+      }
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -90,12 +120,18 @@ export class FeatureFlagService {
     try {
       const existing = await this.findOne({ where: { id } });
       if (!existing.isSuccess) {
-        return Result.error({ error: existing.error, errorCode: existing.errorCode });
+        return Result.error({
+          error: existing.error,
+          errorCode: existing.errorCode,
+        });
       }
       await this.flagRepo.softDeleteWithTenant(id);
       return Result.success(undefined);
     } catch (error) {
-      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -104,11 +140,17 @@ export class FeatureFlagService {
     try {
       const flag = await this.flagRepo.findOne(options);
       if (!flag) {
-        return Result.error({ error: [ErrorCode.FEATURE_FLAG_NOT_FOUND], errorCode: HttpStatus.NOT_FOUND });
+        return Result.error({
+          error: [ErrorCode.FEATURE_FLAG_NOT_FOUND],
+          errorCode: HttpStatus.NOT_FOUND,
+        });
       }
       return Result.success(flag);
     } catch (error) {
-      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 }
