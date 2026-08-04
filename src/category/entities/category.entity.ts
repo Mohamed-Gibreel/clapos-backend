@@ -1,11 +1,15 @@
 import { Expose } from 'class-transformer';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 @Entity()
 @Expose()
-@Unique(['name', 'tenant'])
+// Partial index so soft-deleted categories don't block reusing their name
+@Index('UQ_category_name_tenant_active', ['name', 'tenant'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
 export class Category extends BaseEntity {
   @Column()
   name: string;
