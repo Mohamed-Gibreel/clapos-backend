@@ -23,6 +23,9 @@ export class VariationGroup extends BaseEntity {
   @ManyToOne(() => Product, (p) => p.variationGroups, { onDelete: 'CASCADE' })
   product: Product;
 
-  @OneToMany(() => VariationOption, (vo) => vo.group, { cascade: true })
+  @OneToMany(() => VariationOption, (vo) => vo.group, {
+    cascade: true,
+    orphanedRowAction: 'soft-delete',
+  })
   options: VariationOption[];
 }

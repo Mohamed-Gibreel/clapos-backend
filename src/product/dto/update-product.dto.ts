@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -6,8 +7,31 @@ import {
   IsUUID,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ProductStatus } from '../entities/product.entity';
+import {
+  CreateVariationGroupDTO,
+  CreateVariationOptionDTO,
+} from './create-product.dto';
+
+export class UpdateVariationOptionDTO extends CreateVariationOptionDTO {
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+}
+
+export class UpdateVariationGroupDTO extends CreateVariationGroupDTO {
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateVariationOptionDTO)
+  declare options: UpdateVariationOptionDTO[];
+}
 
 export class UpdateProductDTO {
   @IsString()
@@ -35,4 +59,10 @@ export class UpdateProductDTO {
   @IsUUID()
   @IsOptional()
   categoryId?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateVariationGroupDTO)
+  @IsOptional()
+  variationGroups?: UpdateVariationGroupDTO[];
 }

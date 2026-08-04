@@ -52,6 +52,9 @@ export class Product extends BaseEntity {
   @ManyToOne(() => Tenant)
   tenant: Tenant;
 
-  @OneToMany(() => VariationGroup, (vg) => vg.product, { cascade: true })
+  @OneToMany(() => VariationGroup, (vg) => vg.product, {
+    cascade: true,
+    orphanedRowAction: 'soft-delete',
+  })
   variationGroups: VariationGroup[];
 }

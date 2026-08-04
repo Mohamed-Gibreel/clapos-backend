@@ -15,7 +15,7 @@ import {
 import { Type } from 'class-transformer';
 import { ProductStatus } from '../entities/product.entity';
 
-class CreateVariationOptionDTO {
+export class CreateVariationOptionDTO {
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -31,7 +31,7 @@ class CreateVariationOptionDTO {
   sortOrder?: number;
 }
 
-class CreateVariationGroupDTO {
+export class CreateVariationGroupDTO {
   @IsString()
   @IsNotEmpty()
   name: string;

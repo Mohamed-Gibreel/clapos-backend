@@ -14,7 +14,10 @@ import { Product, ProductStatus } from './entities/product.entity';
 import { VariationGroup } from './entities/variation-group.entity';
 import { VariationOption } from './entities/variation-option.entity';
 import { CreateProductDTO } from './dto/create-product.dto';
-import { UpdateProductDTO } from './dto/update-product.dto';
+import {
+  UpdateProductDTO,
+  UpdateVariationGroupDTO,
+} from './dto/update-product.dto';
 
 @Injectable()
 export class ProductService {
@@ -121,12 +124,15 @@ export class ProductService {
         return Result.error({ error: isValid.error, errorCode: HttpStatus.BAD_REQUEST });
       }
 
-      const existing = await this.findOne({ where: { id } });
+      const existing = await this.findOne({
+        where: { id },
+        relations: ['variationGroups', 'variationGroups.options'],
+      });
       if (!existing.isSuccess) {
         return Result.error({ error: existing.error, errorCode: existing.errorCode });
       }
 
-      const { categoryId, ...rest } = isValid.value;
+      const { categoryId, variationGroups, ...rest } = isValid.value;
 
       if (categoryId !== undefined) {
         if (categoryId === null) {
@@ -140,6 +146,17 @@ export class ProductService {
         }
       }
 
+      if (variationGroups !== undefined) {
+        const mergedGroups = this.mergeVariationGroups(
+          existing.value.variationGroups ?? [],
+          variationGroups,
+        );
+        if (!mergedGroups.isSuccess) {
+          return Result.error({ error: mergedGroups.error, errorCode: mergedGroups.errorCode });
+        }
+        existing.value.variationGroups = mergedGroups.value;
+      }
+
       const merged = this.productRepo.merge(existing.value, rest);
       await this.productRepo.save(merged);
       return Result.success(merged);
@@ -149,6 +166,47 @@ export class ProductService {
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
+  }
+
+  private mergeVariationGroups(
+    existingGroups: VariationGroup[],
+    incomingGroups: UpdateVariationGroupDTO[],
+  ) {
+    const Result = createResultClass<VariationGroup[], string[]>();
+    const existingGroupsById = new Map(existingGroups.map((g) => [g.id, g]));
+
+    const mergedGroups: VariationGroup[] = [];
+    for (const g of incomingGroups) {
+      const existingGroup = g.id ? existingGroupsById.get(g.id) : undefined;
+      if (g.id && !existingGroup) {
+        return Result.error({ error: [ErrorCode.VARIATION_GROUP_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
+      }
+      const group = existingGroup ?? new VariationGroup();
+      group.name = g.name;
+      group.required = g.required ?? false;
+      group.maxSelect = g.maxSelect ?? 1;
+      group.sortOrder = g.sortOrder ?? 0;
+
+      const existingOptionsById = new Map(
+        (existingGroup?.options ?? []).map((o) => [o.id, o]),
+      );
+      const mergedOptions: VariationOption[] = [];
+      for (const o of g.options) {
+        const existingOption = o.id ? existingOptionsById.get(o.id) : undefined;
+        if (o.id && !existingOption) {
+          return Result.error({ error: [ErrorCode.VARIATION_OPTION_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
+        }
+        const option = existingOption ?? new VariationOption();
+        option.name = o.name;
+        option.priceModifier = o.priceModifier ?? 0;
+        option.sortOrder = o.sortOrder ?? 0;
+        mergedOptions.push(option);
+      }
+      group.options = mergedOptions;
+      mergedGroups.push(group);
+    }
+
+    return Result.success(mergedGroups);
   }
 
   async remove(id: string) {
