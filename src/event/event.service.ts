@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { createResultClass } from 'src/utils/result';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 import { Event } from './entities/event.entity';
 import { TerminalEvent } from './entities/terminal-event.entity';
@@ -109,7 +110,7 @@ export class EventService {
       });
       return Result.success(withRelations!);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.TERMINAL_ALREADY_ASSIGNED_TO_EVENT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });

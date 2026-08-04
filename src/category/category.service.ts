@@ -6,6 +6,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 import { Category } from './entities/category.entity';
 import { CreateCategoryDTO } from './dto/create-category.dto';
@@ -35,7 +36,7 @@ export class CategoryService {
       const saved = await this.categoryRepo.saveWithTenant(category);
       return Result.success(saved);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.CATEGORY_NAME_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
@@ -84,7 +85,7 @@ export class CategoryService {
       }
       return Result.success(merged);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.CATEGORY_NAME_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });

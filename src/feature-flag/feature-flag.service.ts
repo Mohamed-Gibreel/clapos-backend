@@ -6,6 +6,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 import { FeatureFlag } from './entities/feature-flag.entity';
 import { CreateFeatureFlagDTO } from './dto/create-feature-flag.dto';
@@ -34,7 +35,7 @@ export class FeatureFlagService {
       const saved = await this.flagRepo.saveWithTenant(flag);
       return Result.success(saved);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.FEATURE_FLAG_KEY_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });

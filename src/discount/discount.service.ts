@@ -6,6 +6,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 
 import { Discount } from './entities/discount.entity';
 import { CreateDiscountDTO } from './dto/create-discount.dto';
@@ -37,7 +38,7 @@ export class DiscountService {
       const saved = await this.discountRepo.saveWithTenant(discount);
       return Result.success(saved);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.DISCOUNT_CODE_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
@@ -80,7 +81,7 @@ export class DiscountService {
       }
       return Result.success(merged);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.DISCOUNT_CODE_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });

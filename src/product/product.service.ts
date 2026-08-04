@@ -6,6 +6,7 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { ErrorCode } from 'src/utils/error-codes';
+import { isUniqueViolation } from 'src/utils/db-errors';
 import { CategoryService } from 'src/category/category.service';
 import { Category } from 'src/category/entities/category.entity';
 
@@ -74,7 +75,7 @@ export class ProductService {
       const saved = await this.productRepo.saveWithTenant(product);
       return Result.success(saved);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.PRODUCT_SKU_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
@@ -143,7 +144,7 @@ export class ProductService {
       await this.productRepo.save(merged);
       return Result.success(merged);
     } catch (error) {
-      if (error?.code === '23505') {
+      if (isUniqueViolation(error)) {
         return Result.error({ error: [ErrorCode.PRODUCT_SKU_CONFLICT], errorCode: HttpStatus.CONFLICT });
       }
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
