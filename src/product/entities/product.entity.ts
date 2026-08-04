@@ -5,10 +5,10 @@ import { BaseEntity } from 'src/utils/entities/base.entity';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
-  Unique,
 } from 'typeorm';
 import { VariationGroup } from './variation-group.entity';
 
@@ -20,7 +20,11 @@ export enum ProductStatus {
 
 @Entity()
 @Expose()
-@Unique(['sku', 'tenant'])
+// Partial index so soft-deleted products don't block reusing their SKU
+@Index('UQ_product_sku_tenant_active', ['sku', 'tenant'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
 export class Product extends BaseEntity {
   @Column()
   name: string;
