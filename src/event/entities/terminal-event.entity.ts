@@ -2,12 +2,17 @@ import { Expose } from 'class-transformer';
 import { PosTerminal } from 'src/terminal/entities/terminal.entity';
 import { User } from 'src/user/entities/user.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Event } from './event.entity';
 
 @Entity()
 @Expose()
-@Unique(['terminalId', 'eventId'])
+// Partial index so a terminal can be reassigned to an event it was
+// previously unassigned from
+@Index('UQ_terminal_event_terminal_event_active', ['terminalId', 'eventId'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
 export class TerminalEvent extends BaseEntity {
   @JoinColumn()
   @ManyToOne(() => PosTerminal)
