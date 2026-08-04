@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
-  Unique,
+  Index,
 } from 'typeorm';
 import { Exclude, Expose } from 'class-transformer';
 
@@ -16,7 +16,12 @@ import { Tenant } from 'src/tenant/entities/tenant.entity';
 
 @Entity()
 @Expose()
-@Unique(['emailAddress', 'tenant']) // email must be unique per tenant, not globally
+// Email must be unique per tenant, not globally. Partial index so a
+// soft-deleted user doesn't permanently reserve their email address.
+@Index('UQ_user_email_tenant_active', ['emailAddress', 'tenant'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
