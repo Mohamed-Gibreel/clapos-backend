@@ -1,11 +1,15 @@
 import { Expose } from 'class-transformer';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity()
 @Expose()
-@Unique(['key', 'tenantId'])
+// Partial index so soft-deleted flags don't block reusing their key
+@Index('UQ_feature_flag_key_tenant_active', ['key', 'tenantId'], {
+  unique: true,
+  where: '"deletedAt" IS NULL',
+})
 export class FeatureFlag extends BaseEntity {
   @Column()
   key: string;
