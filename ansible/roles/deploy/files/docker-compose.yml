@@ -24,6 +24,12 @@ services:
       - POSTGRES_PORT=5432
       - REDIS_HOST=app-redis
       - REDIS_PORT=6379
+      - MINIO_ENDPOINT=app-minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET=${MINIO_BUCKET}
       - MASTER_SECRET=${MASTER_SECRET}
     networks:
       - traefik
@@ -38,6 +44,8 @@ services:
     depends_on:
       app-migration:
         condition: service_completed_successfully
+      app-minio:
+        condition: service_healthy
 
   app-database:
     image: postgres
@@ -63,6 +71,23 @@ services:
     volumes:
       - app-redis-volume:/data
 
+  app-minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - app
+    volumes:
+      - app-minio-volume:/data
+
 networks:
   traefik:
     name: traefik_default
@@ -73,3 +98,4 @@ networks:
 volumes:
   app-redis-volume:
   app-database-volume:
+  app-minio-volume:

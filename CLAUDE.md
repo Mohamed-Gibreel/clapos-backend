@@ -7,6 +7,7 @@ Reusable multi-tenant NestJS backend template with JWT authentication, RBAC, ten
 - **Framework**: NestJS (Node.js/TypeScript)
 - **Database**: PostgreSQL with TypeORM
 - **Cache/Queue**: Redis with BullMQ
+- **Storage**: MinIO (S3-compatible) for media uploads
 - **Auth**: JWT (Passport.js) with tenant-scoped secrets
 - **Docs**: Swagger (available at `/`)
 - **Infrastructure**: Docker, Ansible, Jenkins
@@ -61,6 +62,7 @@ npm run compose:dev:down   # Stop dev environment
 Required variables (see `.env.example`):
 - `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`
 - `REDIS_HOST`, `REDIS_PORT`
+- `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` - object storage for uploaded media
 - `MASTER_SECRET` - Base key for tenant JWT secrets
 
 ## Key Entry Points

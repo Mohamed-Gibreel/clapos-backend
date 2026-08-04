@@ -110,7 +110,7 @@ npm run migration:run      # Apply pending migrations
 npm run migration:revert   # Revert last migration
 
 # Docker
-npm run compose:dev:up     # Start dev environment (PostgreSQL, Redis)
+npm run compose:dev:up     # Start dev environment (PostgreSQL, Redis, MinIO)
 npm run compose:dev:down   # Stop dev environment
 ```
 
@@ -119,4 +119,5 @@ npm run compose:dev:down   # Stop dev environment
 See `.env.example` for the full list:
 - `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`
 - `REDIS_HOST`, `REDIS_PORT`
+- `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET` - object storage for uploaded media (MinIO console at `http://localhost:9001` in dev)
 - `MASTER_SECRET` - Base key for deriving tenant-specific JWT secrets
