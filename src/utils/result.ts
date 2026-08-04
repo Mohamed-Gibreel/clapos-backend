@@ -61,21 +61,18 @@ export const createResultClass = <T, TError>() => {
     }
 
     get value(): T {
-      if (typeof this.#value === 'undefined')
-        throw Error('Result is not successful');
-      return this.#value;
+      if (!this.isSuccess) throw Error('Result is not successful');
+      return this.#value as T;
     }
 
     get error(): TError {
-      if (typeof this.#error === 'undefined')
-        throw Error('Result is successful');
-      return this.#error;
+      if (this.isSuccess) throw Error('Result is successful');
+      return this.#error as TError;
     }
 
     get errorCode(): number {
-      if (typeof this.#errorCode === 'undefined')
-        throw Error('Result is successful');
-      return this.#errorCode;
+      if (this.isSuccess) throw Error('Result is successful');
+      return this.#errorCode as number;
     }
   };
 };
