@@ -51,6 +51,7 @@ import { DiscountModule } from './discount/discount.module';
 import { EventModule } from './event/event.module';
 import { TableModule } from './table/table.module';
 import { MediaModule } from './media/media.module';
+import { FolderModule } from './folder/folder.module';
 
 const typeormConfig: TypeOrmModuleAsyncOptions = {
   imports: [ConfigModule],
@@ -115,6 +116,7 @@ const bullmqConfig: SharedBullAsyncConfiguration = {
     EventModule,
     TableModule,
     MediaModule,
+    FolderModule,
   ],
   controllers: [],
   providers: [

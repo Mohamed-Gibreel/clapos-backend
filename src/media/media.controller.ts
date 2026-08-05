@@ -1,11 +1,14 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -18,6 +21,7 @@ import { ApiTenantHeader } from 'src/utils/decorators/tenant-header.decorator';
 import { Role, Roles } from 'src/utils/decorators/roles.decorator';
 import { ErrorCode } from 'src/utils/error-codes';
 import { MediaService } from './media.service';
+import { MoveMediaDTO } from './dto/move-media.dto';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
@@ -33,17 +37,23 @@ export class MediaController {
   @ApiBody({
     schema: {
       type: 'object',
-      properties: { file: { type: 'string', format: 'binary' } },
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        folderId: { type: 'string', format: 'uuid' },
+      },
     },
   })
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }),
   )
-  upload(@UploadedFile() file?: Express.Multer.File) {
+  upload(
+    @UploadedFile() file?: Express.Multer.File,
+    @Body('folderId') folderId?: string,
+  ) {
     if (!file) {
       throw new BadRequestException(ErrorCode.MEDIA_FILE_REQUIRED);
     }
-    return this.mediaService.upload(file);
+    return this.mediaService.upload(file, folderId);
   }
 
   // Global media (e.g. default category icons) is shared across every
@@ -67,17 +77,24 @@ export class MediaController {
     return this.mediaService.uploadGlobal(file);
   }
 
-  // Everything the caller's tenant uploaded, plus every global file.
+  // Everything the caller's tenant uploaded, plus every global file. Pass
+  // ?folderId= to look inside a folder instead of the root.
   @Get()
   @Role([Roles.Cashier, Roles.Manager, Roles.Owner])
-  findAll() {
-    return this.mediaService.list();
+  findAll(@Query('folderId', new ParseUUIDPipe({ optional: true })) folderId?: string) {
+    return this.mediaService.list(folderId);
   }
 
   @Get(':id')
   @Role([Roles.Cashier, Roles.Manager, Roles.Owner])
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.mediaService.getById(id);
+  }
+
+  @Patch(':id/folder')
+  @Role([Roles.Manager, Roles.Owner])
+  moveToFolder(@Param('id', ParseUUIDPipe) id: string, @Body() dto: MoveMediaDTO) {
+    return this.mediaService.moveToFolder(id, dto);
   }
 
   @Get(':id/download')
