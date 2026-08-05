@@ -36,6 +36,10 @@ export class User {
   @Expose({ groups: ['show-password'] })
   password: string;
 
+  @Column({ nullable: true })
+  @Expose({ groups: ['show-password'] })
+  pin?: string;
+
   @JoinColumn()
   @ManyToOne(() => Role, (r) => r.users)
   role: Role;

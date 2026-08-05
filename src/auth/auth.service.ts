@@ -9,12 +9,19 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { JwtService } from '@nestjs/jwt';
 import { deriveTenantSecret } from 'src/utils/get-tenant-secret';
 import { ErrorCode } from 'src/utils/error-codes';
+import { TerminalAuthService } from 'src/terminal/terminal-auth.service';
+
+interface TerminalTokenPayload {
+  sub: string;
+  typ: 'terminal';
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private terminalAuthService: TerminalAuthService,
   ) {}
 
   async validateUser(username: string, password: string, tenantId: string) {
@@ -187,6 +194,126 @@ export class AuthService {
     } catch (error) {
       return Result.error({
         error,
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  async terminalLogin(deviceToken: string) {
+    const Result = createResultClass<
+      { terminalToken: string; tenantId: string; terminalId: string },
+      string[]
+    >();
+    try {
+      const terminalRes =
+        await this.terminalAuthService.findByDeviceToken(deviceToken);
+      if (!terminalRes.isSuccess) {
+        return Result.error({
+          error: [ErrorCode.INVALID_CREDENTIALS],
+          errorCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+      const terminal = terminalRes.value;
+
+      await this.terminalAuthService.markSeen(terminal.id);
+
+      // Deliberately no `roleId`/`username` claim — this keeps the token
+      // unusable against `RoleGuard`-protected routes even if it were ever
+      // sent as a Bearer header instead of the request body it's designed for.
+      const payload: TerminalTokenPayload = {
+        sub: terminal.id,
+        typ: 'terminal',
+      };
+      const terminalToken = this.jwtService.sign(payload, {
+        expiresIn: '180d',
+        secret: deriveTenantSecret(terminal.tenant.id),
+      });
+
+      return Result.success({
+        terminalToken,
+        tenantId: terminal.tenant.id,
+        terminalId: terminal.id,
+      });
+    } catch (error) {
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
+        errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  async cashierLogin(
+    terminalToken: string,
+    userId: string,
+    pin: string,
+    tenantId: string,
+  ) {
+    const Result = createResultClass<LoggedInUser, string[]>();
+    try {
+      let payload: TerminalTokenPayload;
+      try {
+        payload = this.jwtService.verify<TerminalTokenPayload>(
+          terminalToken,
+          { secret: deriveTenantSecret(tenantId) },
+        );
+      } catch {
+        return Result.error({
+          error: [ErrorCode.INVALID_TOKEN],
+          errorCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+
+      if (payload.typ !== 'terminal') {
+        return Result.error({
+          error: [ErrorCode.INVALID_TOKEN],
+          errorCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+
+      // Confirms the terminal still exists, is still active, and actually
+      // belongs to the tenant in the x-tenant-id header.
+      const terminalRes = await this.terminalAuthService.findActiveByIdAndTenant(
+        payload.sub,
+        tenantId,
+      );
+      if (!terminalRes.isSuccess) {
+        return Result.error({
+          error: [ErrorCode.INVALID_TOKEN],
+          errorCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+
+      const userRes = await this.userService.findOne({
+        where: { id: userId, tenant: { id: tenantId } },
+        relations: ['role', 'tenant'],
+      });
+      if (!userRes.isSuccess || !userRes.value.pin) {
+        return Result.error({
+          error: [ErrorCode.INVALID_CREDENTIALS],
+          errorCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+
+      const isPinValid = await bcrypt.compare(pin, userRes.value.pin);
+      if (!isPinValid) {
+        return Result.error({
+          error: [ErrorCode.INVALID_CREDENTIALS],
+          errorCode: HttpStatus.UNAUTHORIZED,
+        });
+      }
+
+      const safeUser = convertToInstance(SafeUserDTO, userRes.value);
+      if (!safeUser.isSuccess) {
+        return Result.error({
+          error: [ErrorCode.USER_SERIALIZATION_FAILED],
+          errorCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        });
+      }
+
+      return await this.login(safeUser.value);
+    } catch (error) {
+      return Result.error({
+        error: [ErrorCode.INTERNAL_SERVER_ERROR],
         errorCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     }

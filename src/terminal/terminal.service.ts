@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { randomBytes } from 'crypto';
 import { FindOneOptions } from 'typeorm';
 
 import { createResultClass } from 'src/utils/result';
@@ -7,10 +7,12 @@ import { convertToInstance } from 'src/utils/dto-validator';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { ErrorCode } from 'src/utils/error-codes';
+import { hashDeviceToken } from 'src/utils/hash-device-token';
 
 import { PosTerminal } from './entities/terminal.entity';
 import { CreateTerminalDTO } from './dto/create-terminal.dto';
 import { UpdateTerminalDTO } from './dto/update-terminal.dto';
+import { TerminalCredentialsDTO } from './dto/terminal-credentials.dto';
 
 @Injectable()
 export class TerminalService {
@@ -20,20 +22,63 @@ export class TerminalService {
   ) {}
 
   async create(dto: CreateTerminalDTO) {
-    const Result = createResultClass<PosTerminal, string[]>();
+    const Result = createResultClass<TerminalCredentialsDTO, string[]>();
     try {
       const isValid = convertToInstance(CreateTerminalDTO, dto);
       if (!isValid.isSuccess) {
         return Result.error({ error: isValid.error, errorCode: HttpStatus.BAD_REQUEST });
       }
 
+      const deviceToken = randomBytes(32).toString('hex');
+
       const terminal = this.terminalRepo.create();
       terminal.name = isValid.value.name;
-      terminal.deviceToken = randomUUID();
+      terminal.deviceTokenHash = hashDeviceToken(deviceToken);
       terminal.isActive = true;
 
       const saved = await this.terminalRepo.saveWithTenant(terminal);
-      return Result.success(saved);
+      const credentials = convertToInstance(TerminalCredentialsDTO, {
+        id: saved.id,
+        name: saved.name,
+        isActive: saved.isActive,
+        deviceToken,
+      });
+      if (!credentials.isSuccess) {
+        return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      }
+      return Result.success(credentials.value);
+    } catch (error) {
+      return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
+  }
+
+  async rotateToken(id: string) {
+    const Result = createResultClass<TerminalCredentialsDTO, string[]>();
+    try {
+      const existing = await this.findOne({ where: { id } });
+      if (!existing.isSuccess) {
+        return Result.error({ error: existing.error, errorCode: existing.errorCode });
+      }
+
+      const deviceToken = randomBytes(32).toString('hex');
+      const updateRes = await this.terminalRepo.update(
+        { id },
+        { deviceTokenHash: hashDeviceToken(deviceToken) },
+      );
+      if ((updateRes.affected ?? 0) <= 0) {
+        return Result.error({ error: [ErrorCode.TERMINAL_UPDATE_FAILED], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
+      }
+
+      const credentials = convertToInstance(TerminalCredentialsDTO, {
+        id: existing.value.id,
+        name: existing.value.name,
+        isActive: existing.value.isActive,
+        deviceToken,
+      });
+      if (!credentials.isSuccess) {
+        return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
+      }
+      return Result.success(credentials.value);
     } catch (error) {
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }

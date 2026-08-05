@@ -80,6 +80,9 @@ export class UserService {
       let user = this.userRepository.create();
       user.name = createUserDto.name;
       user.password = await bcrypt.hash(createUserDto.password, 10);
+      if (createUserDto.pin) {
+        user.pin = await bcrypt.hash(createUserDto.pin, 10);
+      }
       user.emailAddress = createUserDto.emailAddress;
       user.role = role.value;
       user.tenant = tenant.value;
@@ -151,6 +154,10 @@ export class UserService {
 
       if (dto.password) {
         user.password = await bcrypt.hash(dto.password, 10);
+      }
+
+      if (dto.pin) {
+        user.pin = await bcrypt.hash(dto.pin, 10);
       }
 
       if (dto.roleId) {

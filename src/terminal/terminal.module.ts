@@ -4,12 +4,13 @@ import { TenantModule } from 'src/tenant/tenant.module';
 import { EventModule } from 'src/event/event.module';
 import { TerminalController } from './terminal.controller';
 import { TerminalService } from './terminal.service';
+import { TerminalAuthService } from './terminal-auth.service';
 import { PosTerminal } from './entities/terminal.entity';
 
 @Module({
   imports: [TenantEntityModule.forFeature([PosTerminal]), TenantModule, forwardRef(() => EventModule)],
   controllers: [TerminalController],
-  providers: [TerminalService],
-  exports: [TerminalService],
+  providers: [TerminalService, TerminalAuthService],
+  exports: [TerminalService, TerminalAuthService],
 })
 export class TerminalModule {}

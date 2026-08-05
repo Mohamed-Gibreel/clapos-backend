@@ -52,6 +52,11 @@ export class TerminalController {
     return this.terminalService.remove(id);
   }
 
+  @Post(':id/rotate-token')
+  rotateToken(@Param('id', ParseUUIDPipe) id: string) {
+    return this.terminalService.rotateToken(id);
+  }
+
   @Get(':id/events')
   getEvents(@Param('id', ParseUUIDPipe) id: string) {
     return this.eventService.getEventsForTerminal(id);
