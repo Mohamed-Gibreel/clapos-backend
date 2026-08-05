@@ -53,14 +53,9 @@ export class AuthController {
   @ApiTenantHeader()
   @Post('/cashier-login')
   async cashierLogin(
-    @Body() { terminalToken, userId, pin }: CashierLoginDTO,
+    @Body() { terminalToken, pin }: CashierLoginDTO,
     @TenantId() tenantId: string,
   ) {
-    return await this.authService.cashierLogin(
-      terminalToken,
-      userId,
-      pin,
-      tenantId,
-    );
+    return await this.authService.cashierLogin(terminalToken, pin, tenantId);
   }
 }

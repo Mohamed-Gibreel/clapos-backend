@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { forwardRef, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { Repository, FindOneOptions, FindManyOptions } from 'typeorm';
+import { Repository, FindOneOptions, FindManyOptions, IsNull, Not } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
@@ -13,6 +13,7 @@ import { TenantService } from 'src/tenant/tenant.service';
 import { Roles } from 'src/utils/decorators/roles.decorator';
 import { ErrorCode } from 'src/utils/error-codes';
 import { isUniqueViolation } from 'src/utils/db-errors';
+import { findByHashedSecret } from 'src/utils/find-by-hashed-secret';
 
 @Injectable()
 export class UserService {
@@ -75,6 +76,19 @@ export class UserService {
           error: [ErrorCode.TENANT_NOT_FOUND],
           errorCode: HttpStatus.BAD_REQUEST,
         });
+      }
+
+      if (createUserDto.pin) {
+        const pinConflict = await this.pinConflictExists(
+          isUserValid.value.tenantId,
+          createUserDto.pin,
+        );
+        if (pinConflict) {
+          return Result.error({
+            error: [ErrorCode.USER_PIN_CONFLICT],
+            errorCode: HttpStatus.CONFLICT,
+          });
+        }
       }
 
       let user = this.userRepository.create();
@@ -157,6 +171,13 @@ export class UserService {
       }
 
       if (dto.pin) {
+        const pinConflict = await this.pinConflictExists(tenantId, dto.pin, id);
+        if (pinConflict) {
+          return Result.error({
+            error: [ErrorCode.USER_PIN_CONFLICT],
+            errorCode: HttpStatus.CONFLICT,
+          });
+        }
         user.pin = await bcrypt.hash(dto.pin, 10);
       }
 
@@ -201,6 +222,51 @@ export class UserService {
     } catch (e) {
       return Result.error({ error: e, errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
     }
+  }
+
+  /**
+   * Find which active cashier in a tenant has this PIN — PIN-only cashier
+   * login identifies the user from the PIN alone, no separate userId given.
+   * Hashed PINs can't be looked up by value, so this compares against every
+   * active user in the tenant that has a PIN set.
+   */
+  async findByPin({
+    pin,
+    tenantId,
+  }: {
+    pin: string;
+    tenantId: string;
+  }): Promise<ResultType<User, string>> {
+    const Result = createResultClass<User, string>();
+    try {
+      const candidates = await this.userRepository.find({
+        where: { tenant: { id: tenantId }, pin: Not(IsNull()) },
+        relations: ['role', 'tenant'],
+      });
+      const match = await findByHashedSecret(candidates, pin, (u) => u.pin!);
+      if (!match) return failResult(Result, ErrorCode.USER_NOT_FOUND);
+      return successResult(Result, match);
+    } catch (e) {
+      return failResult(Result, ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // PINs must be unique within a tenant, since PIN-only cashier login
+  // identifies the user from the PIN alone — two cashiers sharing a PIN
+  // would be ambiguous. Same "no direct hash lookup" constraint as findByPin.
+  private async pinConflictExists(
+    tenantId: string,
+    pin: string,
+    excludeUserId?: string,
+  ): Promise<boolean> {
+    const candidates = await this.userRepository.find({
+      where: { tenant: { id: tenantId }, pin: Not(IsNull()) },
+    });
+    const others = excludeUserId
+      ? candidates.filter((u) => u.id !== excludeUserId)
+      : candidates;
+    const match = await findByHashedSecret(others, pin, (u) => u.pin!);
+    return !!match;
   }
 
   /**

@@ -242,12 +242,7 @@ export class AuthService {
     }
   }
 
-  async cashierLogin(
-    terminalToken: string,
-    userId: string,
-    pin: string,
-    tenantId: string,
-  ) {
+  async cashierLogin(terminalToken: string, pin: string, tenantId: string) {
     const Result = createResultClass<LoggedInUser, string[]>();
     try {
       let payload: TerminalTokenPayload;
@@ -283,19 +278,8 @@ export class AuthService {
         });
       }
 
-      const userRes = await this.userService.findOne({
-        where: { id: userId, tenant: { id: tenantId } },
-        relations: ['role', 'tenant'],
-      });
-      if (!userRes.isSuccess || !userRes.value.pin) {
-        return Result.error({
-          error: [ErrorCode.INVALID_CREDENTIALS],
-          errorCode: HttpStatus.UNAUTHORIZED,
-        });
-      }
-
-      const isPinValid = await bcrypt.compare(pin, userRes.value.pin);
-      if (!isPinValid) {
+      const userRes = await this.userService.findByPin({ pin, tenantId });
+      if (!userRes.isSuccess) {
         return Result.error({
           error: [ErrorCode.INVALID_CREDENTIALS],
           errorCode: HttpStatus.UNAUTHORIZED,
