@@ -1,4 +1,5 @@
 import { Expose } from 'class-transformer';
+import { Media } from 'src/media/entities/media.entity';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
 import { LocalizedText } from 'src/utils/types/localized-text';
@@ -15,8 +16,9 @@ export class Category extends BaseEntity {
   @Column({ type: 'jsonb' })
   name: LocalizedText;
 
-  @Column({ nullable: true })
-  icon?: string;
+  @JoinColumn()
+  @ManyToOne(() => Media, { nullable: true, onDelete: 'SET NULL' })
+  icon: Media | null;
 
   @Column({ default: 0 })
   sortOrder: number;

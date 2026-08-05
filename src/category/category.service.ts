@@ -7,6 +7,8 @@ import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorat
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { ErrorCode } from 'src/utils/error-codes';
 import { isUniqueViolation } from 'src/utils/db-errors';
+import { MediaService } from 'src/media/media.service';
+import { Media } from 'src/media/entities/media.entity';
 
 import { Category } from './entities/category.entity';
 import { CreateCategoryDTO } from './dto/create-category.dto';
@@ -17,6 +19,7 @@ export class CategoryService {
   constructor(
     @TenantRepository(Category)
     private readonly categoryRepo: TenantScopedRepository<Category>,
+    private readonly mediaService: MediaService,
   ) {}
 
   async create(dto: CreateCategoryDTO) {
@@ -27,11 +30,22 @@ export class CategoryService {
         return Result.error({ error: isValid.error, errorCode: HttpStatus.BAD_REQUEST });
       }
 
+      const v = isValid.value;
+
+      let icon: Media | null = null;
+      if (v.iconId) {
+        const mediaRes = await this.mediaService.getById(v.iconId);
+        if (!mediaRes.isSuccess) {
+          return Result.error({ error: mediaRes.error, errorCode: HttpStatus.BAD_REQUEST });
+        }
+        icon = mediaRes.value;
+      }
+
       const category = this.categoryRepo.create();
-      category.name = isValid.value.name;
-      category.icon = isValid.value.icon;
-      category.sortOrder = isValid.value.sortOrder ?? 0;
-      category.isActive = isValid.value.isActive ?? true;
+      category.name = v.name;
+      category.icon = icon;
+      category.sortOrder = v.sortOrder ?? 0;
+      category.isActive = v.isActive ?? true;
 
       const saved = await this.categoryRepo.saveWithTenant(category);
       return Result.success(saved);
@@ -46,7 +60,10 @@ export class CategoryService {
   async getAll() {
     const Result = createResultClass<Category[], string[]>();
     try {
-      const categories = await this.categoryRepo.find({ order: { sortOrder: 'ASC' } });
+      const categories = await this.categoryRepo.find({
+        relations: ['icon'],
+        order: { sortOrder: 'ASC' },
+      });
       return Result.success(categories);
     } catch (error) {
       return Result.error({ error: [ErrorCode.INTERNAL_SERVER_ERROR], errorCode: HttpStatus.INTERNAL_SERVER_ERROR });
@@ -56,7 +73,7 @@ export class CategoryService {
   async getById(id: string) {
     const Result = createResultClass<Category, string[]>();
     try {
-      const res = await this.findOne({ where: { id } });
+      const res = await this.findOne({ where: { id }, relations: ['icon'] });
       if (!res.isSuccess) return Result.error({ error: res.error, errorCode: res.errorCode });
       return Result.success(res.value);
     } catch (error) {
@@ -77,7 +94,21 @@ export class CategoryService {
         return Result.error({ error: existing.error, errorCode: existing.errorCode });
       }
 
-      const merged = this.categoryRepo.merge(existing.value, isValid.value);
+      const { iconId, ...rest } = isValid.value;
+
+      if (iconId !== undefined) {
+        if (iconId === null) {
+          existing.value.icon = null;
+        } else {
+          const mediaRes = await this.mediaService.getById(iconId);
+          if (!mediaRes.isSuccess) {
+            return Result.error({ error: mediaRes.error, errorCode: HttpStatus.BAD_REQUEST });
+          }
+          existing.value.icon = mediaRes.value;
+        }
+      }
+
+      const merged = this.categoryRepo.merge(existing.value, rest);
       const updateRes = await this.categoryRepo.update({ id }, merged);
 
       if ((updateRes.affected ?? 0) <= 0) {

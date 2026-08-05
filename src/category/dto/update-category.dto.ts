@@ -2,7 +2,7 @@ import {
   IsBoolean,
   IsInt,
   IsOptional,
-  IsString,
+  IsUUID,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -15,9 +15,9 @@ export class UpdateCategoryDTO {
   @IsOptional()
   name?: LocalizedTextDTO;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  icon?: string;
+  iconId?: string;
 
   @IsInt()
   @Min(0)
