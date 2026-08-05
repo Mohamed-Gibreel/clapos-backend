@@ -1,6 +1,7 @@
 import { Expose } from 'class-transformer';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
+import { LocalizedText } from 'src/utils/types/localized-text';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 export enum DiscountType {
@@ -11,8 +12,8 @@ export enum DiscountType {
 @Entity()
 @Expose()
 export class Discount extends BaseEntity {
-  @Column()
-  name: string;
+  @Column({ type: 'jsonb' })
+  name: LocalizedText;
 
   @Column({ type: 'enum', enum: DiscountType })
   type: DiscountType;

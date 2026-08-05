@@ -6,13 +6,17 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { LocalizedTextDTO } from 'src/utils/dto/localized-text.dto';
 import { DiscountType } from '../entities/discount.entity';
 
 export class UpdateDiscountDTO {
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
   @IsOptional()
-  name?: string;
+  name?: LocalizedTextDTO;
 
   @IsEnum(DiscountType)
   @IsOptional()

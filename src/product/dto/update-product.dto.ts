@@ -3,13 +3,12 @@ import {
   IsEnum,
   IsNumber,
   IsOptional,
-  IsString,
   IsUUID,
-  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { LocalizedTextDTO } from 'src/utils/dto/localized-text.dto';
 import { ProductStatus } from '../entities/product.entity';
 import {
   CreateVariationGroupDTO,
@@ -34,14 +33,15 @@ export class UpdateVariationGroupDTO extends CreateVariationGroupDTO {
 }
 
 export class UpdateProductDTO {
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
   @IsOptional()
-  @MaxLength(200)
-  name?: string;
+  name?: LocalizedTextDTO;
 
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
   @IsOptional()
-  description?: string;
+  description?: LocalizedTextDTO;
 
   @IsNumber()
   @Min(0)

@@ -13,12 +13,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { LocalizedTextDTO } from 'src/utils/dto/localized-text.dto';
 import { ProductStatus } from '../entities/product.entity';
 
 export class CreateVariationOptionDTO {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  name: LocalizedTextDTO;
 
   @IsNumber()
   @Min(0)
@@ -32,9 +33,9 @@ export class CreateVariationOptionDTO {
 }
 
 export class CreateVariationGroupDTO {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  name: LocalizedTextDTO;
 
   @IsBoolean()
   @IsOptional()
@@ -57,14 +58,14 @@ export class CreateVariationGroupDTO {
 }
 
 export class CreateProductDTO {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  name: string;
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  name: LocalizedTextDTO;
 
-  @IsString()
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
   @IsOptional()
-  description?: string;
+  description?: LocalizedTextDTO;
 
   @IsString()
   @IsNotEmpty()

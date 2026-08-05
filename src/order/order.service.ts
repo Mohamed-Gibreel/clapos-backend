@@ -199,7 +199,9 @@ export class OrderService {
           if (!prodRes.isSuccess) {
             return Result.error({ error: [ErrorCode.PRODUCT_NOT_FOUND], errorCode: HttpStatus.BAD_REQUEST });
           }
-          item.name = prodRes.value.name;
+          // OrderItem.name is a plain-string receipt snapshot, so resolve
+          // the localized product name down to its English fallback.
+          item.name = prodRes.value.name.en;
           item.unitPrice = Number(prodRes.value.price);
         } else {
           // One-off item

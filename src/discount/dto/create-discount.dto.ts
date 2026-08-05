@@ -2,18 +2,20 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { LocalizedTextDTO } from 'src/utils/dto/localized-text.dto';
 import { DiscountType } from '../entities/discount.entity';
 
 export class CreateDiscountDTO {
-  @IsString()
-  @IsNotEmpty()
-  name: string;
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  name: LocalizedTextDTO;
 
   @IsEnum(DiscountType)
   type: DiscountType;

@@ -1,10 +1,18 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { LocalizedTextDTO } from 'src/utils/dto/localized-text.dto';
 
 export class CreateCategoryDTO {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  name: string;
+  @ValidateNested()
+  @Type(() => LocalizedTextDTO)
+  name: LocalizedTextDTO;
 
   @IsString()
   @IsOptional()

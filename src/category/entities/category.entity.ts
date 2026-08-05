@@ -1,6 +1,7 @@
 import { Expose } from 'class-transformer';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
+import { LocalizedText } from 'src/utils/types/localized-text';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 @Entity()
@@ -11,8 +12,8 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm
   where: '"deletedAt" IS NULL',
 })
 export class Category extends BaseEntity {
-  @Column()
-  name: string;
+  @Column({ type: 'jsonb' })
+  name: LocalizedText;
 
   @Column({ nullable: true })
   icon?: string;

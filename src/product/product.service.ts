@@ -129,8 +129,10 @@ export class ProductService {
           'variationGroups',
           'variationGroups.options',
         ],
-        order: { name: 'ASC' },
       });
+      // `name` is a jsonb column now, so DB-level ORDER BY no longer sorts
+      // alphabetically by the visible text — sort in-memory instead.
+      products.sort((a, b) => a.name.en.localeCompare(b.name.en));
       return Result.success(products);
     } catch (error) {
       return Result.error({

@@ -3,6 +3,7 @@ import { Category } from 'src/category/entities/category.entity';
 import { Media } from 'src/media/entities/media.entity';
 import { Tenant } from 'src/tenant/entities/tenant.entity';
 import { BaseEntity } from 'src/utils/entities/base.entity';
+import { LocalizedText } from 'src/utils/types/localized-text';
 import {
   Column,
   Entity,
@@ -27,11 +28,11 @@ export enum ProductStatus {
   where: '"deletedAt" IS NULL',
 })
 export class Product extends BaseEntity {
-  @Column()
-  name: string;
+  @Column({ type: 'jsonb' })
+  name: LocalizedText;
 
-  @Column({ nullable: true })
-  description?: string;
+  @Column({ type: 'jsonb', nullable: true })
+  description?: LocalizedText;
 
   @Column()
   sku: string;
