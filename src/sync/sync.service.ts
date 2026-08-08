@@ -106,7 +106,12 @@ export class SyncService {
 
     const liveProducts = await this.productRepo.find({
       where: liveQuery,
-      relations: ['category', 'variationGroups', 'variationGroups.options'],
+      relations: [
+        'category',
+        'image',
+        'variationGroups',
+        'variationGroups.options',
+      ],
     });
 
     let deletedProductIds: string[] = [];
@@ -128,6 +133,7 @@ export class SyncService {
 
     const liveCategories = await this.categoryRepo.find({
       where: liveQuery,
+      relations: ['icon'],
       order: { sortOrder: 'ASC' },
     });
 
