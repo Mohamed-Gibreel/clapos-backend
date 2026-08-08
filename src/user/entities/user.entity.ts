@@ -48,7 +48,7 @@ export class User {
   @ManyToOne(() => Tenant, (t) => t.users)
   tenant: Tenant;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   last_login_at?: Date;
 
   @Exclude()

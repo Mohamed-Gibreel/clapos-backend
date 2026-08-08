@@ -32,6 +32,6 @@ export class TerminalEvent extends BaseEntity {
   @ManyToOne(() => User, { nullable: true })
   assignedBy?: User;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   assignedAt: Date;
 }

@@ -86,7 +86,7 @@ export class Order extends BaseEntity {
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   refundAmount?: number;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   clientCreatedAt: Date;
 
   @Column({ default: false })

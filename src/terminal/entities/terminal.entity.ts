@@ -18,7 +18,7 @@ export class PosTerminal extends BaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   lastSeenAt?: Date;
 
   @JoinColumn()

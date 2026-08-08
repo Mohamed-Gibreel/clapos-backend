@@ -39,7 +39,7 @@ export class Customer extends BaseEntity {
   @Column({ default: false })
   isMember: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   syncedAt?: Date;
 
   @JoinColumn()
