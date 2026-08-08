@@ -109,11 +109,7 @@ export class CategoryService {
       }
 
       const merged = this.categoryRepo.merge(existing.value, rest);
-      const updateRes = await this.categoryRepo.update({ id }, merged);
-
-      if ((updateRes.affected ?? 0) <= 0) {
-        return Result.error({ error: [ErrorCode.CATEGORY_UPDATE_FAILED], errorCode: HttpStatus.UNPROCESSABLE_ENTITY });
-      }
+      await this.categoryRepo.save(merged);
       return Result.success(merged);
     } catch (error) {
       if (isUniqueViolation(error)) {
