@@ -54,12 +54,26 @@ export class ReportsService {
       const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-      const customerQb = this.customerRepo
-        .createQueryBuilder('customer')
-        .innerJoin('customer.tenant', 'ctenant')
-        .where('ctenant.id = :tenantId', { tenantId })
-        .andWhere('customer.deletedAt IS NULL');
-      const totalCustomers = await customerQb.getCount();
+      // Distinct customers who actually ordered in the period — not the
+      // tenant's whole customer list — mirroring the same order-level
+      // filters (status/terminal/date) used for totalOrders/totalRevenue
+      // above, so the four summary numbers describe the same slice of data.
+      const distinctCustomersQb = this.orderRepo
+        .createQueryBuilder('order')
+        .innerJoin('order.tenant', 'tenant')
+        .select('COUNT(DISTINCT order.customerId)', 'count')
+        .where('tenant.id = :tenantId', { tenantId })
+        .andWhere('order.deletedAt IS NULL')
+        .andWhere('order.status != :cancelled', { cancelled: OrderStatus.Cancelled })
+        .andWhere('order.customerId IS NOT NULL')
+        .andWhere('order.clientCreatedAt BETWEEN :from AND :to', { from, to });
+
+      if (terminalIds !== null) {
+        distinctCustomersQb.andWhere('order.terminalId IN (:...terminalIds)', { terminalIds });
+      }
+
+      const distinctCustomersRow = await distinctCustomersQb.getRawOne<{ count: string }>();
+      const totalCustomers = parseInt(distinctCustomersRow?.count ?? '0', 10);
 
       const newCustomersQb = this.customerRepo
         .createQueryBuilder('customer')
@@ -197,10 +211,12 @@ export class ReportsService {
     }
   }
 
-  async getRecentOrders(query: { limit?: number; terminalId?: string; eventId?: string }) {
+  async getRecentOrders(query: { from?: string; to?: string; limit?: number; terminalId?: string; eventId?: string }) {
     const Result = createResultClass<Order[], string[]>();
     try {
       const tenantId = this.tenantContext.getTenantId();
+      const from = query.from ? new Date(query.from) : this.startOfDay(new Date());
+      const to = query.to ? new Date(query.to) : new Date();
       const limit = Math.min(query.limit ?? 5, 50);
 
       const terminalIds = await this.resolveTerminalIds(query.terminalId, query.eventId, tenantId);
@@ -214,6 +230,7 @@ export class ReportsService {
         .leftJoinAndSelect('order.cashier', 'cashier')
         .where('tenant.id = :tenantId', { tenantId })
         .andWhere('order.deletedAt IS NULL')
+        .andWhere('order.clientCreatedAt BETWEEN :from AND :to', { from, to })
         .orderBy('order.clientCreatedAt', 'DESC')
         .take(limit);
 

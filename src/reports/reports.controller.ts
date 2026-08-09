@@ -57,11 +57,15 @@ export class ReportsController {
 
   @Get('recent-orders')
   getRecentOrders(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
     @Query('limit') limit?: string,
     @Query('terminalId') terminalId?: string,
     @Query('eventId') eventId?: string,
   ) {
     return this.reportsService.getRecentOrders({
+      from,
+      to,
       limit: limit ? parseInt(limit, 10) : undefined,
       terminalId,
       eventId,
