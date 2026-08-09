@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 
 import { createResultClass } from 'src/utils/result';
 import { convertToInstance } from 'src/utils/dto-validator';
+import { roundToNearestQuarter } from 'src/utils/money';
 import { TenantRepository } from 'src/utils/decorators/tenant-repository.decorator';
 import { TenantScopedRepository } from 'src/tenant/tenant-scoped.repository';
 import { TenantContextService } from 'src/tenant/tenant-context.service';
@@ -15,7 +16,7 @@ import { TaxConfigService } from 'src/tax-config/tax-config.service';
 
 import { Customer } from 'src/customer/entities/customer.entity';
 import { PosTerminal } from 'src/terminal/entities/terminal.entity';
-import { Order, DiscountType, OrderStatus } from './entities/order.entity';
+import { Order, DiscountType, OrderStatus, PaymentMethod } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { OrderItemVariation } from './entities/order-item-variation.entity';
 import { CreateOrderDTO } from './dto/create-order.dto';
@@ -240,7 +241,14 @@ export class OrderService {
     const taxRate = taxConfigRes.isSuccess && taxConfigRes.value ? Number(taxConfigRes.value.rate) : 0;
     const tax = taxableAmount * taxRate;
     const total = taxableAmount + tax;
-    const change = Math.max(0, v.amountPaid - total);
+    // Cash drawers only deal in quarters, so what's actually collectible in
+    // cash is the total rounded to the nearest 0.25 — order.total itself
+    // stays exact (it's the price of the goods), but change must be
+    // measured against the rounded figure or a cashier who correctly
+    // charged the rounded amount ends up with a bogus non-zero change on
+    // record. Card charges the exact total, so no rounding applies there.
+    const payableTotal = v.paymentMethod === PaymentMethod.Cash ? roundToNearestQuarter(total) : total;
+    const change = Math.max(0, v.amountPaid - payableTotal);
 
     const order = this.orderRepo.create();
     order.clientId = clientId;
