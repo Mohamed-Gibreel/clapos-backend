@@ -42,7 +42,14 @@ export class ResponseInterceptor implements NestInterceptor {
             return new ApiResponseDto({
               ...(isDebug && { detail: data.error }),
               data: undefined,
-              error: isObject(data.error) ? data.error : data.error.toString(),
+              // class-validator's isObject() rejects arrays, so the
+              // ErrorCode lists services return (e.g.
+              // [ErrorCode.PRODUCT_SKU_CONFLICT]) need their own check —
+              // otherwise they'd be flattened into a comma-joined string.
+              error:
+                Array.isArray(data.error) || isObject(data.error)
+                  ? data.error
+                  : data.error.toString(),
             });
           }
         } else {
