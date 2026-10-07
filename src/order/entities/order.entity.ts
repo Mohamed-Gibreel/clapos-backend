@@ -59,6 +59,12 @@ export class Order extends BaseEntity {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   discountValue: number;
 
+  // Snapshot of the voucher code the cashier entered, if the discount came
+  // from one — kept as plain text (not a FK) so the receipt still shows it
+  // after the discount is edited or deleted.
+  @Column({ type: 'varchar', nullable: true })
+  discountCode?: string | null;
+
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;
 

@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   Min,
   ValidateNested,
   IsInt,
@@ -81,6 +82,11 @@ export class CreateOrderDTO {
   @Min(0)
   @IsOptional()
   discountValue?: number;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  discountCode?: string;
 
   @IsEnum(PaymentMethod)
   paymentMethod: PaymentMethod;

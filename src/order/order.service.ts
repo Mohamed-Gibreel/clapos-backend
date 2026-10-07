@@ -257,6 +257,7 @@ export class OrderService {
     order.orderType = v.orderType;
     order.discountType = discountType;
     order.discountValue = discountValue;
+    order.discountCode = discountType === DiscountType.None ? null : (v.discountCode ?? null);
     order.subtotal = subtotal;
     order.tax = tax;
     order.total = total;
